@@ -1,0 +1,38 @@
+# Few-shot examples for the prompt. These must NOT appear in eval/questions/placements.jsonl.
+examples:
+  - question: "How many students studied Science in class 12?"
+    sql: |
+      SELECT COUNT(*) AS students
+      FROM placements.students
+      WHERE hsc_stream = 'Science';
+  - question: "Average MBA percentage of placed vs not placed students"
+    sql: |
+      SELECT is_placed, ROUND(AVG(mba_percent), 2) AS avg_mba_percent
+      FROM placements.students
+      GROUP BY is_placed;
+  - question: "Highest salary offered to a Mkt&HR student"
+    sql: |
+      SELECT MAX(salary) AS highest_salary
+      FROM placements.students
+      WHERE mba_specialisation = 'Mkt&HR' AND is_placed;
+  - question: "Placement rate by class 10 score band of 10 points"
+    sql: |
+      SELECT WIDTH_BUCKET(ssc_percent, 40, 100, 6) AS band,
+             COUNT(*) AS students,
+             ROUND(100.0 * AVG(is_placed::int), 1) AS placement_rate_pct
+      FROM placements.students
+      GROUP BY band
+      ORDER BY band;
+  - question: "Top 5 students by employability test score with their outcome"
+    sql: |
+      SELECT student_id, employability_test_percent, is_placed, salary
+      FROM placements.students
+      ORDER BY employability_test_percent DESC
+      LIMIT 5;
+
+ui_examples:
+  - "What is the overall placement rate?"
+  - "Placement rate for students with and without work experience"
+  - "Average salary by MBA specialisation"
+  - "Median salary of placed female students"
+  - "Placement rate by degree field and gender"

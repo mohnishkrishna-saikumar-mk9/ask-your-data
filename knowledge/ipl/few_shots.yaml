@@ -1,0 +1,63 @@
+# Few-shot examples for the prompt. These must NOT appear in eval/questions/ipl.jsonl.
+examples:
+  - question: "How many matches were played in the 2016 season?"
+    sql: |
+      SELECT COUNT(*) AS matches
+      FROM ipl.matches
+      WHERE season = 2016;
+  - question: "Top 5 batters by total sixes since 2019"
+    sql: |
+      SELECT batter, SUM(sixes) AS sixes
+      FROM ipl.batting_innings
+      WHERE season >= 2019
+      GROUP BY batter
+      ORDER BY sixes DESC
+      LIMIT 5;
+  - question: "Best bowling economy in the middle overs (min 500 legal balls)"
+    sql: |
+      SELECT bowler,
+             COUNT(*) FILTER (WHERE extras_type IS NULL OR extras_type NOT IN ('wides', 'noballs')) AS legal_balls,
+             ROUND(SUM(total_runs - CASE WHEN extras_type IN ('byes', 'legbyes') THEN extra_runs ELSE 0 END)
+                   / (COUNT(*) FILTER (WHERE extras_type IS NULL OR extras_type NOT IN ('wides', 'noballs')) / 6.0), 2) AS economy
+      FROM ipl.deliveries
+      WHERE phase = 'middle' AND inning <= 2
+      GROUP BY bowler
+      HAVING COUNT(*) FILTER (WHERE extras_type IS NULL OR extras_type NOT IN ('wides', 'noballs')) >= 500
+      ORDER BY economy
+      LIMIT 10;
+  - question: "Which team won the most matches at Eden Gardens?"
+    sql: |
+      SELECT winner AS team, COUNT(*) AS wins
+      FROM ipl.matches
+      WHERE venue = 'Eden Gardens' AND winner IS NOT NULL
+      GROUP BY winner
+      ORDER BY wins DESC
+      LIMIT 1;
+  - question: "Highest individual score in each season"
+    sql: |
+      WITH ranked AS (
+          SELECT season, batter, runs,
+                 ROW_NUMBER() OVER (PARTITION BY season ORDER BY runs DESC) AS rn
+          FROM ipl.batting_innings
+      )
+      SELECT season, batter, runs
+      FROM ranked
+      WHERE rn = 1
+      ORDER BY season;
+  - question: "Bowling average of JJ Bumrah by season"
+    sql: |
+      SELECT season,
+             SUM(wickets) AS wickets,
+             ROUND(SUM(runs_conceded)::numeric / NULLIF(SUM(wickets), 0), 2) AS bowling_average
+      FROM ipl.bowling_innings
+      WHERE bowler = 'JJ Bumrah'
+      GROUP BY season
+      ORDER BY season;
+
+# Clickable example questions on the Ask page (FR-16).
+ui_examples:
+  - "Top 5 batters by strike rate in death overs since 2020 (min 150 balls)"
+  - "Which team has won the most IPL titles?"
+  - "Most wickets by a bowler in a single season"
+  - "Average first-innings score at Wankhede Stadium by season"
+  - "Who has hit the most sixes in IPL history?"

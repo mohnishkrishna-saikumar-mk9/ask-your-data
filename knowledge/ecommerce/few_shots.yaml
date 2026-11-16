@@ -1,0 +1,44 @@
+# Few-shot examples for the prompt. These must NOT appear in eval/questions/ecommerce.jsonl.
+examples:
+  - question: "How many orders were shipped to Kerala?"
+    sql: |
+      SELECT COUNT(*) AS orders
+      FROM ecommerce.orders
+      WHERE ship_state = 'Kerala';
+  - question: "Revenue by fulfilment type"
+    sql: |
+      SELECT o.fulfilment, SUM(i.amount) AS revenue
+      FROM ecommerce.orders o
+      JOIN ecommerce.order_items i ON i.order_id = o.order_id
+      WHERE o.status NOT LIKE 'Cancelled%'
+      GROUP BY o.fulfilment
+      ORDER BY revenue DESC;
+  - question: "Weekly number of orders in May 2022"
+    sql: |
+      SELECT date_trunc('week', order_date)::date AS week, COUNT(*) AS orders
+      FROM ecommerce.orders
+      WHERE order_date >= DATE '2022-05-01' AND order_date < DATE '2022-06-01'
+      GROUP BY 1
+      ORDER BY 1;
+  - question: "Top 3 cities in Tamil Nadu by revenue"
+    sql: |
+      SELECT o.ship_city, SUM(i.amount) AS revenue
+      FROM ecommerce.orders o
+      JOIN ecommerce.order_items i ON i.order_id = o.order_id
+      WHERE o.ship_state = 'Tamil Nadu' AND o.status NOT LIKE 'Cancelled%'
+      GROUP BY o.ship_city
+      ORDER BY revenue DESC NULLS LAST
+      LIMIT 3;
+  - question: "Average order value for Expedited shipping"
+    sql: |
+      SELECT ROUND(SUM(i.amount) / COUNT(DISTINCT o.order_id), 2) AS aov
+      FROM ecommerce.orders o
+      JOIN ecommerce.order_items i ON i.order_id = o.order_id
+      WHERE o.ship_service_level = 'Expedited' AND o.status NOT LIKE 'Cancelled%';
+
+ui_examples:
+  - "What was the total revenue each month?"
+  - "Top 5 states by number of orders"
+  - "Which category has the highest cancellation rate?"
+  - "Average order value for B2B vs B2C orders"
+  - "Units sold by size for the kurta category"
