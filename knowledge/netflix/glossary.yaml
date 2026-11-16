@@ -1,0 +1,15 @@
+# Exact metric definitions for Netflix questions.
+metrics:
+  movie: "titles.type = 'Movie'."
+  TV show: "titles.type = 'TV Show'."
+  Indian title: "a title with country 'India' in netflix.title_countries (a title can have several countries)."
+  added in year X: "EXTRACT(YEAR FROM titles.date_added) = X."
+  released in year X: "titles.release_year = X."
+  movie length: "titles.duration_minutes (NULL for TV shows)."
+  number of seasons: "titles.seasons (NULL for movies)."
+  genre: "netflix.title_genres.genre (from the 'listed_in' list), e.g. Dramas, Comedies, International Movies."
+  decade: "(release_year / 10) * 10."
+notes:
+  - "Directors, cast, countries and genres are in bridge tables keyed by show_id. Join them to titles; never search them with LIKE on a text list."
+  - "When counting titles through a bridge table, use COUNT(DISTINCT show_id) if more than one bridge table is joined."
+  - "Country names are full names: 'United States', 'United Kingdom', 'India', 'South Korea'."
