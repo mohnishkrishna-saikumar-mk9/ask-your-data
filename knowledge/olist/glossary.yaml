@@ -1,0 +1,17 @@
+# Exact metric definitions for Olist questions. Rendered into the LLM prompt (full variant).
+metrics:
+  real customer: "customer_unique_id. A person gets a NEW customer_id for every order, so count people with COUNT(DISTINCT customers.customer_unique_id)."
+  repeat customer: "a customer_unique_id with more than one order (join orders to customers on customer_id, group by customer_unique_id)."
+  GMV: "SUM(order_items.price) - merchandise value, freight excluded."
+  revenue including freight: "SUM(order_items.price + order_items.freight_value)."
+  order value (paid): "SUM(payments.payment_value) for an order."
+  delivered order: "orders.order_status = 'delivered'."
+  delivery days: "EXTRACT(EPOCH FROM order_delivered_customer_date - order_purchase_timestamp) / 86400, delivered orders only."
+  late delivery: "order_delivered_customer_date > order_estimated_delivery_date."
+  month: "date_trunc('month', orders.order_purchase_timestamp)."
+  category: "use products.category_english for English names (e.g. health_beauty, bed_bath_table)."
+notes:
+  - "Currency is Brazilian real (BRL). States are 2-letter codes such as SP, RJ, MG."
+  - "Data covers Sep 2016 - Oct 2018; Jan 2017 - Aug 2018 are the complete months."
+  - "One order can have several items (order_items) and several payments; aggregate each separately before joining them to avoid double counting."
+  - "review_id is not unique; count reviews with COUNT(*) on olist.reviews."
