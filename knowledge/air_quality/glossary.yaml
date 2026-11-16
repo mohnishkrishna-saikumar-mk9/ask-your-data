@@ -1,0 +1,16 @@
+# Exact metric definitions for air-quality questions.
+metrics:
+  AQI bucket order: "Good (0-50), Satisfactory (51-100), Moderate (101-200), Poor (201-300), Very Poor (301-400), Severe (401+). Sort with a CASE expression, not alphabetically."
+  average pollution: "AVG(column) - AVG ignores NULL readings; never treat NULL as 0."
+  days with data: "COUNT(column), not COUNT(*), because many readings are NULL."
+  winter: "EXTRACT(MONTH FROM obs_date) IN (11, 12, 1, 2)."
+  summer: "EXTRACT(MONTH FROM obs_date) BETWEEN 3 AND 6."
+  monsoon: "EXTRACT(MONTH FROM obs_date) BETWEEN 7 AND 9."
+  2020 lockdown: "obs_date BETWEEN DATE '2020-03-25' AND DATE '2020-05-31'; compare with the same dates in 2019."
+  rolling average: "AVG(x) OVER (PARTITION BY city ORDER BY obs_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) for 7 days."
+  month: "date_trunc('month', obs_date)."
+notes:
+  - "Use city_daily for city questions and station_daily joined to stations for station or state questions."
+  - "Data covers 2015-01-01 to 2020-07-01; not every city starts in 2015."
+  - "Ahmedabad has very high AQI values because of unusually high CO readings in the source data."
+  - "pm25 is PM2.5; columns are lower case without dots (pm25, pm10, no2, so2, o3, co)."
