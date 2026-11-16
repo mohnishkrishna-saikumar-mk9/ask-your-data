@@ -1,0 +1,54 @@
+# Few-shot examples for the prompt. These must NOT appear in eval/questions/chinook.jsonl.
+# Chosen to teach the join paths (line -> track -> album -> artist) and the employee self-join.
+examples:
+  - question: "How many tracks are in the Jazz genre?"
+    sql: |
+      SELECT COUNT(*) AS tracks
+      FROM chinook.track t
+      JOIN chinook.genre g ON g.genre_id = t.genre_id
+      WHERE g.name = 'Jazz';
+  - question: "Which 5 artists have the most albums?"
+    sql: |
+      SELECT ar.name AS artist, COUNT(*) AS albums
+      FROM chinook.album al
+      JOIN chinook.artist ar ON ar.artist_id = al.artist_id
+      GROUP BY ar.name
+      ORDER BY albums DESC
+      LIMIT 5;
+  - question: "Total revenue from tracks by Iron Maiden"
+    sql: |
+      SELECT SUM(il.unit_price * il.quantity) AS revenue
+      FROM chinook.invoice_line il
+      JOIN chinook.track t ON t.track_id = il.track_id
+      JOIN chinook.album al ON al.album_id = t.album_id
+      JOIN chinook.artist ar ON ar.artist_id = al.artist_id
+      WHERE ar.name = 'Iron Maiden';
+  - question: "List each employee with the name of their manager"
+    sql: |
+      SELECT e.first_name || ' ' || e.last_name AS employee,
+             m.first_name || ' ' || m.last_name AS manager
+      FROM chinook.employee e
+      LEFT JOIN chinook.employee m ON m.employee_id = e.reports_to
+      ORDER BY manager NULLS FIRST, employee
+      LIMIT 100;
+  - question: "Average track length in minutes per media type"
+    sql: |
+      SELECT mt.name AS media_type, ROUND(AVG(t.milliseconds) / 60000.0, 2) AS avg_minutes
+      FROM chinook.track t
+      JOIN chinook.media_type mt ON mt.media_type_id = t.media_type_id
+      GROUP BY mt.name
+      ORDER BY avg_minutes DESC
+      LIMIT 100;
+  - question: "Number of invoices per year"
+    sql: |
+      SELECT EXTRACT(YEAR FROM invoice_date)::int AS year, COUNT(*) AS invoices
+      FROM chinook.invoice
+      GROUP BY 1
+      ORDER BY 1;
+
+ui_examples:
+  - "Which country spends the most on music?"
+  - "Top 10 best-selling artists by revenue"
+  - "Which sales rep has the highest total sales?"
+  - "Which genre has the longest average track length?"
+  - "Monthly revenue in 2024"
