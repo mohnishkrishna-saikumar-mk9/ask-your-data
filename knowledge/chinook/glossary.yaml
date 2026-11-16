@@ -1,0 +1,13 @@
+# Exact metric definitions for Chinook music-store questions.
+metrics:
+  revenue: "SUM(invoice.total), or SUM(invoice_line.unit_price * invoice_line.quantity) when you need it by track, album, artist or genre."
+  units sold: "SUM(invoice_line.quantity)."
+  sales rep: "the employee linked by customer.support_rep_id = employee.employee_id."
+  manager: "employee.reports_to = manager's employee_id (self-join; use WITH RECURSIVE for the full chain)."
+  track length in minutes: "track.milliseconds / 60000.0."
+  month: "date_trunc('month', invoice.invoice_date)."
+  never purchased track: "a track with no row in invoice_line (LEFT JOIN ... WHERE invoice_line.track_id IS NULL, or NOT EXISTS)."
+notes:
+  - "Path from a sale to an artist: invoice_line -> track -> album -> artist. To a genre: invoice_line -> track -> genre."
+  - "Country of a sale is invoice.billing_country; country of a customer is customer.country."
+  - "Prices are in US dollars. Invoices cover 2021 - 2025."
