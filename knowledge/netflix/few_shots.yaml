@@ -1,0 +1,55 @@
+# Few-shot examples for the prompt. These must NOT appear in eval/questions/netflix.jsonl.
+# Chosen to teach the bridge tables (never LIKE on a list) and the movie / TV split.
+examples:
+  - question: "How many TV shows have more than 5 seasons?"
+    sql: |
+      SELECT COUNT(*) AS shows
+      FROM netflix.titles
+      WHERE type = 'TV Show' AND seasons > 5;
+  - question: "List the Japanese anime titles added in 2020"
+    sql: |
+      SELECT t.title, t.type
+      FROM netflix.titles t
+      JOIN netflix.title_countries c ON c.show_id = t.show_id
+      JOIN netflix.title_genres g ON g.show_id = t.show_id
+      WHERE c.country = 'Japan'
+        AND g.genre ILIKE '%anime%'
+        AND EXTRACT(YEAR FROM t.date_added) = 2020
+      ORDER BY t.title
+      LIMIT 100;
+  - question: "Which directors have directed at least 10 titles?"
+    sql: |
+      SELECT director, COUNT(*) AS titles
+      FROM netflix.title_directors
+      GROUP BY director
+      HAVING COUNT(*) >= 10
+      ORDER BY titles DESC
+      LIMIT 100;
+  - question: "Number of titles per age rating"
+    sql: |
+      SELECT rating, COUNT(*) AS titles
+      FROM netflix.titles
+      WHERE rating IS NOT NULL
+      GROUP BY rating
+      ORDER BY titles DESC
+      LIMIT 100;
+  - question: "What is the longest movie and how long is it?"
+    sql: |
+      SELECT title, duration_minutes
+      FROM netflix.titles
+      WHERE type = 'Movie'
+      ORDER BY duration_minutes DESC NULLS LAST
+      LIMIT 1;
+  - question: "In how many titles have Shah Rukh Khan and Kajol both acted?"
+    sql: |
+      SELECT COUNT(*) AS titles
+      FROM netflix.title_cast a
+      JOIN netflix.title_cast b ON b.show_id = a.show_id
+      WHERE a.actor = 'Shah Rukh Khan' AND b.actor = 'Kajol';
+
+ui_examples:
+  - "How many movies and TV shows are there?"
+  - "Which countries produce the most TV shows?"
+  - "Top 10 genres for Indian movies"
+  - "How many titles were added each year since 2015?"
+  - "Which actors appear in the most Netflix titles?"
