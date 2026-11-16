@@ -15,10 +15,10 @@ if str(ROOT) not in sys.path:
 st.set_page_config(page_title="Ask Your Data", page_icon=":material/query_stats:", layout="wide")
 
 pages = [
-    st.Page("pages/0_Overview.py", title="Overview", icon=":material/home:", default=True),
-    st.Page("pages/1_Ask.py", title="Ask", icon=":material/chat:"),
-    st.Page("pages/2_Dashboard.py", title="Dashboard", icon=":material/dashboard:"),
-    st.Page("pages/3_Query_Library.py", title="Query library", icon=":material/library_books:"),
-    st.Page("pages/4_Evaluation.py", title="Evaluation", icon=":material/fact_check:"),
+    st.Page("app_pages/0_Overview.py", title="Overview", icon=":material/home:", default=True),
+    st.Page("app_pages/1_Ask.py", title="Ask", icon=":material/chat:"),
+    st.Page("app_pages/2_Dashboard.py", title="Dashboard", icon=":material/dashboard:"),
+    st.Page("app_pages/3_Query_Library.py", title="Query library", icon=":material/library_books:"),
+    st.Page("app_pages/4_Evaluation.py", title="Evaluation", icon=":material/fact_check:"),
 ]
 st.navigation(pages).run()
