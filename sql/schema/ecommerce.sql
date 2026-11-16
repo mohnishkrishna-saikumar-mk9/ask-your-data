@@ -1,7 +1,52 @@
--- E-commerce schema: Amazon India seller sales (2022), split into products / orders / order_items.
+-- E-commerce schema: one Indian clothing seller's data. Amazon India orders (2022) split into
+-- products / orders / order_items, plus international wholesale sales and a stock snapshot.
 -- Re-runnable: drops and recreates everything.
 CREATE SCHEMA IF NOT EXISTS ecommerce;
-DROP TABLE IF EXISTS ecommerce.order_items, ecommerce.orders, ecommerce.products CASCADE;
+DROP TABLE IF EXISTS ecommerce.order_items, ecommerce.orders, ecommerce.products,
+                     ecommerce.international_sales, ecommerce.inventory CASCADE;
+
+CREATE TABLE ecommerce.international_sales (
+    id           BIGSERIAL PRIMARY KEY,
+    sale_date    DATE NOT NULL,
+    customer     TEXT,
+    style        TEXT,
+    sku          TEXT,
+    size         TEXT,
+    pcs          NUMERIC(10, 2),
+    rate         NUMERIC(12, 2),
+    gross_amount NUMERIC(12, 2)
+);
+
+CREATE TABLE ecommerce.inventory (
+    sku       TEXT PRIMARY KEY,
+    design_no TEXT,
+    stock     INTEGER,
+    category  TEXT,
+    size      TEXT,
+    color     TEXT
+);
+
+CREATE INDEX idx_intl_date     ON ecommerce.international_sales (sale_date);
+CREATE INDEX idx_intl_customer ON ecommerce.international_sales (customer);
+
+COMMENT ON TABLE ecommerce.international_sales IS 'International / wholesale sales by the same seller to boutique customers (Jun 2021 - May 2022). Amounts in INR. Not linked to Amazon orders';
+COMMENT ON COLUMN ecommerce.international_sales.id IS 'Surrogate primary key (one row per sale line; identical lines are real repeat sales)';
+COMMENT ON COLUMN ecommerce.international_sales.sale_date IS 'Date of the sale; month = date_trunc(''month'', sale_date)';
+COMMENT ON COLUMN ecommerce.international_sales.customer IS 'Customer (boutique or person) name, upper case';
+COMMENT ON COLUMN ecommerce.international_sales.style IS 'Style / design code';
+COMMENT ON COLUMN ecommerce.international_sales.sku IS 'SKU code; may match ecommerce.products.sku or ecommerce.inventory.sku (not enforced)';
+COMMENT ON COLUMN ecommerce.international_sales.size IS 'Garment size';
+COMMENT ON COLUMN ecommerce.international_sales.pcs IS 'Pieces sold';
+COMMENT ON COLUMN ecommerce.international_sales.rate IS 'Price per piece in INR';
+COMMENT ON COLUMN ecommerce.international_sales.gross_amount IS 'Line amount in INR. International revenue = SUM(gross_amount)';
+
+COMMENT ON TABLE ecommerce.inventory IS 'Stock on hand per SKU (one snapshot, no date)';
+COMMENT ON COLUMN ecommerce.inventory.sku IS 'SKU code (primary key); joins to ecommerce.products.sku for most Amazon SKUs';
+COMMENT ON COLUMN ecommerce.inventory.design_no IS 'Design number (same as style code)';
+COMMENT ON COLUMN ecommerce.inventory.stock IS 'Units in stock';
+COMMENT ON COLUMN ecommerce.inventory.category IS 'Category in Title Case, e.g. Kurta, Kurta Set, Set, Top, Dress, Leggings';
+COMMENT ON COLUMN ecommerce.inventory.size IS 'Garment size';
+COMMENT ON COLUMN ecommerce.inventory.color IS 'Colour, e.g. Red, Navy Blue';
 
 CREATE TABLE ecommerce.products (
     sku      TEXT PRIMARY KEY,
