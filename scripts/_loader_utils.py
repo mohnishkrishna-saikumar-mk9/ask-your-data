@@ -12,6 +12,7 @@ SCHEMA_DIR = ROOT / "sql" / "schema"
 
 
 NULL_TOKENS = ["", "NA", "N/A", "n/a", "nan", "NaN", "None", "null", "NULL"]
+INVISIBLE = "[​‌‍﻿]"  # zero-width space / non-joiner / joiner, stray BOM
 
 
 def clean_header(name: str) -> str:
@@ -33,10 +34,15 @@ def read_csv(path: Path, encoding: str = "utf-8-sig") -> pd.DataFrame:
 
 
 def blanks_to_null(df: pd.DataFrame) -> pd.DataFrame:
-    """Strip whitespace and turn empty / 'NA' / 'nan' strings into real NULLs (None)."""
+    """Clean every text cell: drop invisible characters, strip, NULL tokens -> None.
+
+    Zero-width characters (e.g. '\\u200bSAINT SEIYA') are invisible but make `WHERE title = ...`
+    fail to match, so they are removed; non-breaking spaces become normal spaces.
+    """
     out = df.copy()
     for col in out.columns:
-        s = out[col].astype("string").str.strip()
+        s = out[col].astype("string").str.replace(INVISIBLE, "", regex=True)
+        s = s.str.replace("\xa0", " ", regex=False).str.strip()
         out[col] = s.mask(s.isin(NULL_TOKENS))
     return out.astype(object).where(out.notna(), None)
 

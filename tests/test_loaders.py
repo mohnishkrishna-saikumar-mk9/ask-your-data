@@ -25,6 +25,11 @@ def test_blanks_become_null() -> None:
     assert df["a"].tolist() == ["x", None, None, None]
 
 
+def test_invisible_characters_removed() -> None:
+    df = blanks_to_null(pd.DataFrame({"a": ["​SAINT SEIYA", "Kota\xa0Factory", "​"]}))
+    assert df["a"].tolist() == ["SAINT SEIYA", "Kota Factory", None]
+
+
 def test_clean_header() -> None:
     assert clean_header("﻿Sr No") == "Sr No"
     assert clean_header("Sales Channel ") == "Sales Channel"
