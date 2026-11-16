@@ -1,0 +1,61 @@
+# Few-shot examples for the prompt. These must NOT appear in eval/questions/olist.jsonl.
+# Chosen to teach the traps of this schema: customer_unique_id, items vs payments, timestamps.
+examples:
+  - question: "How many different people bought something in 2017?"
+    sql: |
+      SELECT COUNT(DISTINCT c.customer_unique_id) AS customers
+      FROM olist.orders o
+      JOIN olist.customers c ON c.customer_id = o.customer_id
+      WHERE o.order_purchase_timestamp >= TIMESTAMP '2017-01-01'
+        AND o.order_purchase_timestamp <  TIMESTAMP '2018-01-01';
+  - question: "Average freight value per item for each seller state"
+    sql: |
+      SELECT s.state, ROUND(AVG(i.freight_value), 2) AS avg_freight
+      FROM olist.order_items i
+      JOIN olist.sellers s ON s.seller_id = i.seller_id
+      GROUP BY s.state
+      ORDER BY avg_freight DESC
+      LIMIT 100;
+  - question: "Which 5 product categories have the most items sold?"
+    sql: |
+      SELECT p.category_english AS category, COUNT(*) AS items_sold
+      FROM olist.order_items i
+      JOIN olist.products p ON p.product_id = i.product_id
+      WHERE p.category_english IS NOT NULL
+      GROUP BY p.category_english
+      ORDER BY items_sold DESC
+      LIMIT 5;
+  - question: "Median number of days from purchase to delivery for delivered orders in Rio de Janeiro state"
+    sql: |
+      SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (
+                 ORDER BY EXTRACT(EPOCH FROM o.order_delivered_customer_date - o.order_purchase_timestamp) / 86400
+             ) AS median_delivery_days
+      FROM olist.orders o
+      JOIN olist.customers c ON c.customer_id = o.customer_id
+      WHERE o.order_status = 'delivered'
+        AND o.order_delivered_customer_date IS NOT NULL
+        AND c.state = 'RJ';
+  - question: "Total amount paid per order, for the 10 most expensive orders"
+    sql: |
+      SELECT order_id, SUM(payment_value) AS paid
+      FROM olist.payments
+      GROUP BY order_id
+      ORDER BY paid DESC
+      LIMIT 10;
+  - question: "For each month of 2018, how many orders were canceled?"
+    sql: |
+      SELECT date_trunc('month', order_purchase_timestamp)::date AS month, COUNT(*) AS canceled_orders
+      FROM olist.orders
+      WHERE order_status = 'canceled'
+        AND order_purchase_timestamp >= TIMESTAMP '2018-01-01'
+        AND order_purchase_timestamp <  TIMESTAMP '2019-01-01'
+      GROUP BY 1
+      ORDER BY 1;
+
+# Clickable example questions on the Ask page (FR-16).
+ui_examples:
+  - "What is the average review score for each product category?"
+  - "Which states have the highest share of late deliveries?"
+  - "How many customers placed more than one order?"
+  - "Monthly number of orders in 2017"
+  - "Top 10 sellers by total sales value"
