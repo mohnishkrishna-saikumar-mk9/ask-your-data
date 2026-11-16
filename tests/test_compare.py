@@ -8,8 +8,10 @@ import pytest
 
 from eval.compare import has_order_by, normalise_value, order_columns, results_match
 from eval.run_eval import load_questions
+from src.config import DATASETS
 from src.db import run_query
 from src.glossary import load_few_shots
+from src.guardrails import validate_sql
 
 QUESTIONS = load_questions()
 
@@ -77,14 +79,18 @@ def test_has_order_by() -> None:
 
 
 def test_benchmark_size_and_mix() -> None:
+    """20 questions per dataset (FR-17), unique ids, ~30% easy / 45% medium / 25% hard."""
     counts = pd.Series([q["dataset"] for q in QUESTIONS]).value_counts().to_dict()
-    assert counts == {"ipl": 50, "ecommerce": 25, "placements": 25}
-    assert len({q["id"] for q in QUESTIONS}) == 100
-    assert {q["difficulty"] for q in QUESTIONS} == {"easy", "medium", "hard"}
+    assert counts == {ds: 20 for ds in DATASETS}
+    assert len({q["id"] for q in QUESTIONS}) == 160
+    for ds in DATASETS:
+        mix = pd.Series([q["difficulty"] for q in QUESTIONS if q["dataset"] == ds]).value_counts()
+        assert mix.to_dict() == {"easy": 6, "medium": 9, "hard": 5}, ds
 
 
 def test_eval_questions_not_in_few_shots() -> None:
-    for ds in ("ipl", "ecommerce", "placements"):
+    """No leakage: a few-shot example in the prompt must never be a benchmark question."""
+    for ds in DATASETS:
         shots = {ex["question"].lower().strip() for ex in load_few_shots(ds)}
         assert not shots & {q["question"].lower().strip() for q in QUESTIONS if q["dataset"] == ds}
 
@@ -95,6 +101,12 @@ def test_jsonl_is_valid() -> None:
             assert set(json.loads(line)) == {"id", "dataset", "difficulty", "question", "gold_sql"}
 
 
+@pytest.mark.parametrize("q", QUESTIONS, ids=lambda q: q["id"])
+def test_gold_sql_passes_guardrails(q: dict) -> None:
+    """A model that wrote exactly the gold SQL must not be rejected (e.g. reserved-word aliases)."""
+    validate_sql(q["gold_sql"], q["dataset"])
+
+
 @pytest.mark.db
 @pytest.mark.parametrize("q", QUESTIONS, ids=lambda q: q["id"])
 def test_gold_sql_runs(q: dict, loaded_db: None) -> None:
@@ -102,25 +114,31 @@ def test_gold_sql_runs(q: dict, loaded_db: None) -> None:
 
 
 @pytest.mark.db
-def test_eval_pipeline_with_perfect_fake_model(loaded_db: None, tmp_path: Path,
-                                                monkeypatch: pytest.MonkeyPatch) -> None:
-    """A fake model that returns the gold SQL must score 100%; summarize must build tables."""
+def test_perfect_model_full_run_and_summary(loaded_db: None, tmp_path: Path,
+                                            monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    """Every question is answerable through the full pipeline (100%), and summarize publishes
+    only complete runs - a partial smoke run must never replace a full one."""
     from eval import run_eval, summarize
 
-    sample = [q for q in QUESTIONS if q["difficulty"] == "medium"][:6]
-    gold_by_question = {q["question"]: q["gold_sql"] for q in sample}
+    gold = {q["question"]: q["gold_sql"] for q in QUESTIONS}
 
     def perfect_llm(messages: list[dict], model: str) -> tuple[str, float]:
         question = messages[-1]["content"].rsplit("QUESTION: ", 1)[1]
-        return f"```sql\n{gold_by_question[question]}\n```", 10.0
+        return f"```sql\n{gold[question]}\n```", 10.0
 
-    rows = [run_eval.evaluate_one(q, "fake:perfect", "full", llm=perfect_llm) for q in sample]
-    assert all(r["correct"] for r in rows)
+    rows = pd.DataFrame([run_eval.evaluate_one(q, "fake:perfect", "full", llm=perfect_llm)
+                         for q in QUESTIONS])
+    assert rows["correct"].all(), rows.loc[~rows["correct"], "id"].tolist()
+    assert rows["n_tables"].notna().all()
 
     monkeypatch.setattr(summarize, "RESULTS_DIR", tmp_path)
-    pd.DataFrame(rows).to_csv(tmp_path / "20260101_000000_fake_full.csv", index=False)
+    rows.to_csv(tmp_path / "20260101_000000_fake-perfect_full.csv", index=False)
+    rows.head(10).assign(correct=False).to_csv(tmp_path / "20260102_000000_fake-perfect_full.csv",
+                                               index=False)  # later, partial, all wrong
     summarize.main()
-    assert "| fake:perfect | full |" in (tmp_path / "summary.md").read_text(encoding="utf-8")
+    md = (tmp_path / "summary.md").read_text(encoding="utf-8")
+    assert "| fake:perfect | full |" in md and "100%" in md and "Accuracy vs number of tables" in md
+    assert "skipped partial run 20260102" in capsys.readouterr().out
 
 
 def test_ties_on_sort_key_may_appear_in_any_order() -> None:
