@@ -1,0 +1,16 @@
+# Exact metric definitions for Indian startup funding questions.
+metrics:
+  total funding: "SUM(funding_rounds.amount_usd); NULL (undisclosed) amounts are ignored automatically by SUM."
+  disclosed rounds: "funding_rounds.amount_usd IS NOT NULL."
+  year: "EXTRACT(YEAR FROM funding_rounds.funding_date)."
+  investor activity: "COUNT(DISTINCT round_investors.round_id) per investor_name."
+  startups backed by an investor: "COUNT(DISTINCT funding_rounds.startup_name) joined through round_investors."
+  seed / angel round: "investment_type = 'Seed / Angel'."
+  private equity round: "investment_type = 'Private Equity'."
+  millions of dollars: "amount_usd / 1e6."
+notes:
+  - "Amounts are in US dollars. Data covers 2015 - early 2020 (very few rows for 2020)."
+  - "Cities are normalised: Bengaluru (not Bangalore), Gurugram (not Gurgaon), Delhi (includes New Delhi)."
+  - "Startup names are merged for big companies: Ola, OYO, Paytm, Flipkart, BYJU'S, Rapido."
+  - "Use round_investors to answer questions about investors; one round can have several investors."
+  - "Names of investors such as 'Undisclosed Investors' are placeholders, not real investors."
