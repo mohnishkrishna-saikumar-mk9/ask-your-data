@@ -1,4 +1,6 @@
-"""Overview page: what the project is, the datasets, and how it works."""
+"""Overview page: what the project is, the 8 datasets, and how the engine works."""
+import os
+
 import streamlit as st
 
 from app.ui import DATASET_LABELS, cached_query, db_ready
@@ -6,34 +8,36 @@ from src.config import DATASETS
 
 st.title("Ask Your Data")
 st.markdown(
-    "Ask questions in plain English about **IPL cricket**, **Indian e-commerce sales** or "
-    "**campus placements**. An LLM writes the SQL, guardrails check it, and a read-only "
-    "PostgreSQL database answers - with the SQL, a table and a chart."
+    "Ask questions in plain English and get back the SQL, a table and a chart. An LLM writes "
+    "the SQL from the database's own schema and data dictionary, guardrails check it, and a "
+    "read-only PostgreSQL database answers. It is tested on **8 real datasets**, from a single "
+    "table to an 11-table music store."
 )
+if os.getenv("GITHUB_URL"):
+    st.link_button("Source code on GitHub", os.environ["GITHUB_URL"], icon=":material/code:")
 
-COUNT_SQL = {
-    "ipl": "SELECT (SELECT COUNT(*) FROM ipl.matches) AS a, (SELECT COUNT(*) FROM ipl.deliveries) AS b",
-    "ecommerce": "SELECT (SELECT COUNT(*) FROM ecommerce.orders) AS a, "
-                 "(SELECT COUNT(*) FROM ecommerce.order_items) AS b",
-    "placements": "SELECT (SELECT COUNT(*) FROM placements.students) AS a, "
-                  "(SELECT COUNT(*) FILTER (WHERE is_placed) FROM placements.students) AS b",
-}
-COUNT_LABELS = {"ipl": ("Matches", "Deliveries"), "ecommerce": ("Orders", "Order lines"),
-                "placements": ("Students", "Placed")}
+# Table and row counts come from the catalogue (pg_class.reltuples is refreshed by ANALYZE in the
+# loaders), so this page needs no dataset-specific SQL.
+SIZE_SQL = """
+SELECT n.nspname AS dataset, COUNT(*) AS tables, SUM(GREATEST(c.reltuples, 0))::bigint AS rows
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'r' AND n.nspname = ANY(:schemas)
+GROUP BY n.nspname
+"""
 
 if db_ready():
-    cols = st.columns(len(DATASETS))
-    for col, (dataset, description) in zip(cols, DATASETS.items(), strict=True):
-        with col, st.container(border=True, height="stretch"):
-            st.subheader(DATASET_LABELS[dataset])
-            st.caption(description)
-            try:
-                row = cached_query(COUNT_SQL[dataset]).iloc[0]
-                a, b = COUNT_LABELS[dataset]
-                st.metric(a, f"{int(row['a']):,}")
-                st.metric(b, f"{int(row['b']):,}")
-            except Exception:
-                st.warning("Not loaded yet - run `python -m scripts.load_all`.")
+    sizes = cached_query(SIZE_SQL, {"schemas": list(DATASETS)}).set_index("dataset")
+    with st.grid(4, gap="medium"):
+        for dataset, description in DATASETS.items():
+            with st.container(border=True, height="stretch"):
+                st.markdown(f"**{DATASET_LABELS.get(dataset, dataset)}**")
+                st.caption(description)
+                if dataset in sizes.index:
+                    size = sizes.loc[dataset]
+                    st.markdown(f"{int(size['tables'])} tables · ~{int(size['rows']):,} rows")
+                else:
+                    st.markdown(":orange[Not loaded yet]")
 
 st.subheader("How it works")
 st.graphviz_chart("""
@@ -51,7 +55,7 @@ digraph {
 
 st.markdown(
     "- **Ask** - type a question and get SQL + results\n"
-    "- **Dashboard** - KPIs and charts built from hand-written SQL\n"
-    "- **Query library** - 40 commented queries (CTEs, window functions, percentiles)\n"
-    "- **Evaluation** - accuracy of different LLMs and prompts on a 100-question benchmark"
+    "- **Dashboard** - KPIs and charts for each dataset, built from hand-written SQL\n"
+    "- **Query library** - 72 commented queries (CTEs, window functions, recursive CTEs, cohorts)\n"
+    "- **Evaluation** - accuracy of different LLMs and prompts on the benchmark"
 )
