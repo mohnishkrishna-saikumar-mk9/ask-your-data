@@ -565,10 +565,10 @@ Each phase ends with: tests passing, `docs/LEARNING_NOTES.md` updated, a short s
 - [x] `app/Home.py`, Dashboard and Query Library pages, theme, caching (all 8 datasets: 4 KPIs + 4 charts each, filters for 6; AppTest tests)
 
 ### Phase 4 — Text-to-SQL engine
-- [ ] `schema_context.py`, `providers.py`, `client.py`, `prompts.py`, `guardrails.py`, `text_to_sql.py`, `charts.py`, `cache.py`
-- [ ] `few_shots.yaml` per dataset
-- [ ] Ask page; fallback model; latency display
-- [ ] Unit tests for guardrails, extraction, charts (mocked LLM)
+- [x] `schema_context.py`, `providers.py`, `client.py`, `prompts.py`, `guardrails.py`, `text_to_sql.py`, `charts.py`, `cache.py` (dataset-agnostic; dialect passed through; prompts 700-1,900 tokens for all 8 datasets)
+- [x] `few_shots.yaml` per dataset (5-6 examples + 5 Ask-page questions each; all pass guardrails and run)
+- [x] Ask page; fallback model; latency display (checked end-to-end through the real openai client against a local fake OpenAI-compatible server; no real model run yet - needs API keys)
+- [x] Unit tests for guardrails, extraction, charts (mocked LLM); end-to-end engine test per dataset; guardrail rewrite proven not to change results
 
 ### Phase 5 — Evaluation
 - [ ] 160 questions with gold SQL (20 × 8 datasets); test that all gold SQL runs

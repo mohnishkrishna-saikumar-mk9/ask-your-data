@@ -253,3 +253,50 @@ comparator) and ran 2–3.5× faster. `EXPLAIN ANALYZE` showed why: `COUNT(DISTI
    Pure logic in normal unit tests; page behaviour with `streamlit.testing.v1.AppTest` (run the script,
    set session state or widget values, assert on the elements); and a manual check in a real browser
    for layout, which is how the `pages/` deep-link bug was found.
+
+---
+
+## Phase 4 — Text-to-SQL engine on all 8 datasets
+
+### What was built
+The engine modules were already dataset-agnostic (built earlier for 3 datasets). Phase 4 made them
+work — and proved they work — on all 8:
+- `knowledge/<dataset>/few_shots.yaml` for the 5 new datasets: 6 question → SQL pairs each, chosen to
+  teach that schema's traps, plus 5 clickable example questions for the Ask page.
+- Tests: every few-shot passes the guardrails and runs; an end-to-end test per dataset (fake LLM)
+  checks prompt → guardrails → read-only run, and that the prompt contains *only* that dataset's tables.
+- Guardrails now pretty-print the SQL they return (one clause per line) so the Ask page is readable.
+- Loader fix found here: invisible zero-width spaces in Netflix titles (`\u200bSAINT SEIYA`) are removed
+  for every dataset, so `WHERE title = '...'` can match.
+
+### Key concepts
+- **Prompt budget.** The prompt is schema + column comments + glossary + examples. Measured per dataset:
+  700–1,900 tokens, even for 11 tables. Small enough that we send the whole schema; schema retrieval
+  (picking only relevant tables) is only needed for much bigger databases (Phase 8).
+- **Few-shot examples teach the traps, not the easy cases.** Olist examples always count people with
+  `customer_unique_id`; Netflix examples join bridge tables instead of `LIKE '%India%'`; Chinook examples
+  show the invoice_line → track → album → artist path and the employee self-join.
+- **No leakage.** Few-shot questions must never appear in the benchmark, or few-shot accuracy would be
+  inflated. A test enforces it once the benchmark exists.
+- **Run exactly what you validated.** The guardrails parse the model's SQL into a tree, check the tree,
+  and then run SQL *re-rendered from that tree* — not the model's original text. This avoids
+  "parser differential" tricks where a validator and the database read the same text differently.
+  Because the text changes (`x::int` → `CAST(x AS INT)`), I proved it never changes an answer: all 72
+  analysis queries and 100 gold queries return identical results before and after the rewrite (now a test).
+- **Testing the real client without paying for an API.** A 40-line fake OpenAI-compatible HTTP server
+  (dev-only, not committed) let the Ask page run through the real `openai` SDK and HTTP path for all
+  8 datasets. The provider registry made this a one-line config change (`OLLAMA_BASE_URL`).
+
+### Interview questions
+1. **How do you stop an LLM from running dangerous SQL?**
+   Several layers: an AST check with sqlglot (one statement, SELECT only, no write nodes anywhere, only
+   the chosen schema, no dangerous functions, LIMIT added); then a read-only database role, a READ ONLY
+   transaction and a statement timeout. And I execute the SQL re-rendered from the validated tree.
+2. **How would this scale to a database with 200 tables?**
+   The whole schema would not fit or would confuse the model. Rank tables by how well their names,
+   columns and comments match the question, send the top few plus their foreign-key neighbours, and keep
+   the glossary and examples. That's schema retrieval (SPEC FR-25).
+3. **How do you test an LLM feature without calling the LLM?**
+   Make the model call a parameter (dependency injection). Unit tests pass a fake that returns scripted
+   replies to cover success, self-correction, fallback and guardrail rejection. For an end-to-end UI
+   check, point the real client at a local fake server that speaks the same API.
