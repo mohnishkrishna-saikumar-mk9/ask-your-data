@@ -1,0 +1,50 @@
+# Few-shot examples for the prompt. These must NOT appear in eval/questions/startups.jsonl.
+examples:
+  - question: "How many funding rounds were raised by startups in Mumbai?"
+    sql: |
+      SELECT COUNT(*) AS rounds
+      FROM startups.funding_rounds
+      WHERE city = 'Mumbai';
+  - question: "Total disclosed funding for FinTech startups in millions of dollars"
+    sql: |
+      SELECT ROUND(SUM(amount_usd) / 1e6, 1) AS total_usd_mn
+      FROM startups.funding_rounds
+      WHERE industry_vertical ILIKE '%fintech%';
+  - question: "Which startups did Tiger Global invest in?"
+    sql: |
+      SELECT DISTINCT fr.startup_name
+      FROM startups.round_investors ri
+      JOIN startups.funding_rounds fr ON fr.round_id = ri.round_id
+      WHERE ri.investor_name ILIKE '%tiger global%'
+      ORDER BY fr.startup_name
+      LIMIT 100;
+  - question: "Average disclosed round size per investment type"
+    sql: |
+      SELECT investment_type, COUNT(amount_usd) AS disclosed_rounds,
+             ROUND(AVG(amount_usd) / 1e6, 2) AS avg_usd_mn
+      FROM startups.funding_rounds
+      GROUP BY investment_type
+      HAVING COUNT(amount_usd) >= 5
+      ORDER BY avg_usd_mn DESC
+      LIMIT 100;
+  - question: "Number of funding rounds per quarter in 2016"
+    sql: |
+      SELECT date_trunc('quarter', funding_date)::date AS quarter, COUNT(*) AS rounds
+      FROM startups.funding_rounds
+      WHERE funding_date >= DATE '2016-01-01' AND funding_date < DATE '2017-01-01'
+      GROUP BY 1
+      ORDER BY 1;
+  - question: "Which startup raised the most rounds, and how many?"
+    sql: |
+      SELECT startup_name, COUNT(*) AS rounds
+      FROM startups.funding_rounds
+      GROUP BY startup_name
+      ORDER BY rounds DESC
+      LIMIT 1;
+
+ui_examples:
+  - "Which 10 startups raised the most money?"
+  - "How much funding did Bengaluru startups raise each year?"
+  - "Which investors backed the most startups?"
+  - "What share of rounds were Seed / Angel rounds?"
+  - "Largest funding round in 2019"
