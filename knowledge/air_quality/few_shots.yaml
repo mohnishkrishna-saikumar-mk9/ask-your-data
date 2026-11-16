@@ -1,0 +1,52 @@
+# Few-shot examples for the prompt. These must NOT appear in eval/questions/air_quality.jsonl.
+examples:
+  - question: "Average PM10 in Hyderabad in 2018"
+    sql: |
+      SELECT ROUND(AVG(pm10), 1) AS avg_pm10
+      FROM air_quality.city_daily
+      WHERE city = 'Hyderabad'
+        AND obs_date >= DATE '2018-01-01' AND obs_date < DATE '2019-01-01';
+  - question: "How many monitoring stations does each state have?"
+    sql: |
+      SELECT state, COUNT(*) AS stations
+      FROM air_quality.stations
+      GROUP BY state
+      ORDER BY stations DESC
+      LIMIT 100;
+  - question: "Which 5 days had the worst AQI in Lucknow?"
+    sql: |
+      SELECT obs_date, aqi, aqi_bucket
+      FROM air_quality.city_daily
+      WHERE city = 'Lucknow' AND aqi IS NOT NULL
+      ORDER BY aqi DESC
+      LIMIT 5;
+  - question: "Average NO2 per station in Bengaluru"
+    sql: |
+      SELECT s.station_name, ROUND(AVG(d.no2), 1) AS avg_no2
+      FROM air_quality.station_daily d
+      JOIN air_quality.stations s ON s.station_id = d.station_id
+      WHERE s.city = 'Bengaluru'
+      GROUP BY s.station_name
+      ORDER BY avg_no2 DESC
+      LIMIT 100;
+  - question: "Monsoon average AQI per year in Chennai"
+    sql: |
+      SELECT EXTRACT(YEAR FROM obs_date)::int AS year, ROUND(AVG(aqi), 0) AS monsoon_avg_aqi
+      FROM air_quality.city_daily
+      WHERE city = 'Chennai' AND EXTRACT(MONTH FROM obs_date) BETWEEN 7 AND 9
+      GROUP BY 1
+      ORDER BY 1;
+  - question: "Number of Severe AQI days per year in Patna"
+    sql: |
+      SELECT EXTRACT(YEAR FROM obs_date)::int AS year, COUNT(*) AS severe_days
+      FROM air_quality.city_daily
+      WHERE city = 'Patna' AND aqi_bucket = 'Severe'
+      GROUP BY 1
+      ORDER BY 1;
+
+ui_examples:
+  - "Which cities had the cleanest air on average?"
+  - "Monthly average PM2.5 in Delhi during 2019"
+  - "How much did AQI fall in Mumbai during the 2020 lockdown?"
+  - "How many Good AQI days did Bengaluru have each year?"
+  - "Which state has the most monitoring stations?"
