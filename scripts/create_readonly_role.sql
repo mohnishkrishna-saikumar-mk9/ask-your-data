@@ -16,10 +16,13 @@ $$;
 ALTER ROLE ayd_reader SET default_transaction_read_only = on;
 ALTER ROLE ayd_reader SET statement_timeout = '10s';
 
--- Read access to the three dataset schemas only (nothing in public).
+-- Read access to the 8 dataset schemas only (nothing in public). Keep in sync with DATASETS.
 REVOKE ALL ON SCHEMA public FROM ayd_reader;
-GRANT USAGE ON SCHEMA ipl, ecommerce, placements TO ayd_reader;
-GRANT SELECT ON ALL TABLES IN SCHEMA ipl, ecommerce, placements TO ayd_reader;
+GRANT USAGE ON SCHEMA placements, netflix, startups, air_quality, ecommerce, ipl, olist, chinook
+    TO ayd_reader;
+GRANT SELECT ON ALL TABLES IN SCHEMA placements, netflix, startups, air_quality, ecommerce, ipl, olist,
+    chinook TO ayd_reader;
 
 -- Loaders drop and recreate tables; default privileges keep the grants for new tables.
-ALTER DEFAULT PRIVILEGES IN SCHEMA ipl, ecommerce, placements GRANT SELECT ON TABLES TO ayd_reader;
+ALTER DEFAULT PRIVILEGES IN SCHEMA placements, netflix, startups, air_quality, ecommerce, ipl, olist,
+    chinook GRANT SELECT ON TABLES TO ayd_reader;

@@ -30,10 +30,10 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 
 @pytest.fixture(scope="session")
 def loaded_db() -> None:
-    """Create schemas and load all three fixture datasets into the TEST database."""
-    from scripts import check_setup, load_ecommerce, load_ipl, load_placements
+    """Create schemas and load every fixture dataset into the TEST database."""
+    from scripts import check_setup
+    from scripts.load_all import LOADERS
 
     check_setup.main()
-    load_ipl.main(FIXTURES / "ipl")
-    load_ecommerce.main(FIXTURES / "ecommerce")
-    load_placements.main(FIXTURES / "placements")
+    for name, loader in LOADERS.items():
+        loader.main(FIXTURES / name)
