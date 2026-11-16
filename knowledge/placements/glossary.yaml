@@ -1,0 +1,10 @@
+metrics:
+  placement rate: "AVG(is_placed::int); multiply by 100 for a percentage."
+  salary statistics: "compute only over placed students (WHERE is_placed); salary is NULL otherwise."
+  median: "PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY column)."
+  score band: "WIDTH_BUCKET(percent_column, low, high, n_buckets), e.g. 10-point bands 50-60, 60-70."
+  top 10% of students: "NTILE(10) OVER (ORDER BY score DESC) = 1."
+  correlation: "CORR(x, y)."
+notes:
+  - "mba_specialisation values: 'Mkt&Fin', 'Mkt&HR'. degree_field values: 'Comm&Mgmt', 'Sci&Tech', 'Others'."
+  - "hsc_stream values: 'Commerce', 'Science', 'Arts'. Boards: 'Central', 'Others'. gender: 'M', 'F'."

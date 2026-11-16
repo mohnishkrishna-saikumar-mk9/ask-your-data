@@ -1,0 +1,22 @@
+# Exact metric definitions for IPL questions. Rendered into the LLM prompt (full variant).
+metrics:
+  balls faced: "Deliveries to a batter where extras_type IS NULL or extras_type <> 'wides'. Already computed as batting_innings.balls_faced."
+  strike rate: "100.0 * runs / balls faced."
+  batting average: "runs / dismissals (dismissals = innings where is_out is TRUE). Use NULLIF to avoid dividing by zero."
+  legal ball: "A delivery where extras_type IS NULL or extras_type NOT IN ('wides', 'noballs'). Already computed as bowling_innings.balls_bowled."
+  runs conceded: "total_runs minus extra_runs of type 'byes' and 'legbyes'. Already computed as bowling_innings.runs_conceded."
+  economy: "runs conceded / (legal balls / 6.0)."
+  bowling average: "runs conceded / wickets."
+  bowler wicket: "is_wicket is TRUE and dismissal_kind NOT IN ('run out', 'retired hurt', 'retired out', 'obstructing the field'). Already computed as bowling_innings.wickets."
+  death overs: "deliveries.phase = 'death' (overs 16-20, i.e. over_no 15-19)."
+  powerplay: "deliveries.phase = 'powerplay' (overs 1-6, i.e. over_no 0-5)."
+  middle overs: "deliveries.phase = 'middle' (over_no 6-14)."
+  dot ball: "a legal ball with total_runs = 0."
+  boundary: "batter_runs = 4 (four) or batter_runs = 6 (six)."
+  champion / title: "the winner of the match where match_type = 'Final' in that season."
+  batting first won: "matches.result = 'runs'. Chasing team won: matches.result = 'wickets'."
+  season: "matches.season is an integer year, e.g. 2023. 'since 2020' means season >= 2020."
+notes:
+  - "Exclude super overs (inning > 2) from batting and bowling stats; the views already do this."
+  - "Player names are written like 'V Kohli', 'MS Dhoni', 'JJ Bumrah' (initials + surname)."
+  - "Team names use current franchise names, e.g. 'Royal Challengers Bengaluru', 'Delhi Capitals', 'Punjab Kings'."

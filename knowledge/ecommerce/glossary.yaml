@@ -1,0 +1,14 @@
+metrics:
+  revenue: "SUM(order_items.amount) over orders whose status NOT LIKE 'Cancelled%'."
+  orders: "COUNT(DISTINCT orders.order_id)."
+  AOV (average order value): "revenue / COUNT(DISTINCT order_id), cancelled orders excluded."
+  cancelled order: "orders.status LIKE 'Cancelled%'."
+  cancellation rate: "cancelled orders / all orders (COUNT DISTINCT order_id)."
+  units: "SUM(order_items.qty)."
+  month: "date_trunc('month', orders.order_date)."
+  B2B: "orders.is_b2b = TRUE; B2C is is_b2b = FALSE."
+  promotion: "orders.has_promotion = TRUE."
+notes:
+  - "Revenue lives in order_items.amount; join order_items to orders on order_id and to products on sku."
+  - "State names are Title Case, e.g. 'Maharashtra', 'Karnataka', 'Tamil Nadu', 'Delhi'."
+  - "Data covers roughly April-June 2022."
