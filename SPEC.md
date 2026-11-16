@@ -554,9 +554,9 @@ Each phase ends with: tests passing, `docs/LEARNING_NOTES.md` updated, a short s
 - [x] Fixture CSVs + `tests/test_loaders.py`
 
 ### Phase 2 — SQL analysis
-- [ ] 72 queries (Section 8: IPL 20, e-commerce 10, placements 10, olist 8, startups 6, air quality 6, netflix 6, chinook 6), each with header comment
-- [ ] Each runs < 500 ms (add indexes/views if not)
-- [ ] `knowledge/<dataset>/glossary.yaml`
+- [x] 72 queries (Section 8: IPL 20, e-commerce 10, placements 10, olist 8, startups 6, air quality 6, netflix 6, chinook 6), each with header comment
+- [ ] Each runs < 500 ms (add indexes/views if not) — 66/72 pass on the slow local test server (median 10 ms; 5 e-commerce queries rewritten to aggregate before joining, 2-3.5x faster). The other 6 are full scans of 100K-260K rows near that server's ~750 ms floor for a bare count; re-measure with `python -m scripts.time_queries` on a normal PostgreSQL install
+- [x] `knowledge/<dataset>/glossary.yaml` (all 8)
 
 ### Phase 3 — Streamlit dashboards
 - [ ] `app/Home.py`, Dashboard and Query Library pages, theme, caching

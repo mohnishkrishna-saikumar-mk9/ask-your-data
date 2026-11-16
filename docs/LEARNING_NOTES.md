@@ -143,3 +143,61 @@ each, every table and column commented. Details per dataset: `docs/DATA_SOURCES.
    Joining to a table with several rows per key multiplies the rows on the other side, so SUMs
    become too large. I aggregated geolocation to one row per zip prefix before it can be joined,
    and added primary keys so the database guarantees the grain.
+
+---
+
+## Phase 2 — SQL analysis (72 queries) and metric glossaries
+
+### What was built
+- 72 hand-written queries in `sql/analysis/<dataset>/`: IPL 20, e-commerce 10, placements 10,
+  olist 8, startups 6, air quality 6, netflix 6, chinook 6. Each starts with a header
+  (`-- Q:` question, `-- Concepts:` SQL used, `-- Result:` columns) that the Query Library page reads.
+- `knowledge/<dataset>/glossary.yaml` for all 8 datasets: exact business definitions
+  ("GMV = SUM(price)", "a real customer = customer_unique_id") that are added to the LLM prompt.
+- Tests: every query has a header, runs on the fixture data, and never touches another dataset's
+  schema; every dataset has a glossary.
+
+### Key concepts (with the file that shows each one)
+- **Window functions** compute over related rows without collapsing them:
+  - `RANK` / `DENSE_RANK` / `ROW_NUMBER` — ties give 1,1,3 / 1,1,2 / 1,2,3 (`ipl/05`, `ipl/08`, `startups/06`).
+  - `LAG` for change vs the previous period (`ipl/11`, `olist/01`, `startups/01`).
+  - Running total: `SUM(x) OVER (ORDER BY t ROWS UNBOUNDED PRECEDING)` (`chinook/06`, `olist/05`).
+  - Rolling average: `ROWS BETWEEN 6 PRECEDING AND CURRENT ROW` = 7-day window (`air_quality/06`).
+  - Share inside a group: `SUM(SUM(x)) OVER (PARTITION BY g)` — a window over an aggregate (`ecommerce/03`).
+- **Recursive CTE** for hierarchies: an anchor row (the top manager) plus a recursive part that joins
+  employees to the rows found so far (`chinook/04`).
+- **Anti-join** ("things with no match"): `LEFT JOIN ... WHERE right.id IS NULL` (`chinook/05`) or
+  `NOT EXISTS`. **Semi-join** ("things with at least one match"): `EXISTS` (`netflix/04`).
+- **Cohort analysis**: find each customer's first purchase month, then check whether they bought
+  again within 3 / 6 months (`olist/08`).
+- **Conditional aggregation**: `COUNT(*) FILTER (WHERE ...)` / `AVG(x) FILTER (...)` to pivot categories
+  into columns in one pass (`netflix/01`, `air_quality/03`).
+- **Choosing a fair period**: `olist/01` excludes 2016's handful of test orders, which produced a
+  meaningless +1,000,000% "growth". Good analysis checks that the denominator is meaningful.
+
+### Performance: aggregate before you join
+Five e-commerce queries joined 129K order lines to orders and then used `COUNT(DISTINCT order_id)`.
+Rewritten to sum the lines per order in a CTE first, then join one row per order and use `COUNT(*)`.
+Each new version was checked to return *exactly* the same result as the old one (using the benchmark's
+comparator) and ran 2–3.5× faster. `EXPLAIN ANALYZE` showed why: `COUNT(DISTINCT)` needs a big sort.
+
+### Bugs found while writing these (good interview stories)
+- `ORDER BY movies + tv_shows` fails: output aliases can be used alone in ORDER BY, but not inside
+  an expression. Fix: repeat the expression (`netflix/06`).
+- `GROUP BY 1` grouped `date_trunc(...)::date`, but the window's ORDER BY used `date_trunc(...)` without
+  the cast — PostgreSQL treats them as different expressions. Fix: compute the month in a CTE (`chinook/06`).
+- Reading the real results exposed a loader bug: the startups file stores characters as literal
+  UTF-8 byte text (`Byju\xe2\x80\x99s`). The loader now *decodes* them (`’`, `é`, non-breaking space)
+  instead of deleting them, so BYJU'S variants merge correctly.
+
+### Interview questions
+1. **RANK vs DENSE_RANK vs ROW_NUMBER?**
+   For scores 90, 90, 80: RANK gives 1, 1, 3 (skips), DENSE_RANK 1, 1, 2 (no gaps), ROW_NUMBER
+   1, 2, 3 (always unique, ties broken arbitrarily unless you add a tie-breaker). Use ROW_NUMBER for
+   "exactly one per group", RANK/DENSE_RANK when ties should all be kept.
+2. **How do you find customers who never ordered / tracks never sold?**
+   An anti-join: `LEFT JOIN orders ... WHERE orders.id IS NULL`, or `WHERE NOT EXISTS (subquery)`.
+   Avoid `NOT IN (subquery)` when the subquery can return NULL — then it returns no rows at all.
+3. **A query is slow because of COUNT(DISTINCT) after a join. What do you do?**
+   Aggregate the many-side to one row per key in a CTE first, then join and count rows. Prove the
+   rewrite is equivalent by comparing results, and measure before/after with EXPLAIN ANALYZE.
