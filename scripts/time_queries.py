@@ -4,6 +4,7 @@ Run from the project root:  python -m scripts.time_queries
 """
 import time
 
+from src.config import DATASETS
 from src.db import run_query
 from src.sql_library import list_queries
 
@@ -12,7 +13,7 @@ TARGET_MS = 500
 
 def main() -> None:
     slow = 0
-    for dataset in ("ipl", "ecommerce", "placements"):
+    for dataset in DATASETS:
         for q in list_queries(dataset):
             run_query(q.sql, schema=dataset)  # warm-up (caches)
             start = time.perf_counter()
