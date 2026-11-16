@@ -11,11 +11,13 @@ import json
 import re
 import time
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
 
-from eval.compare import has_order_by, results_match
+from eval.compare import has_order_by, order_columns, results_match
+from src.config import DATASETS
 from src.db import run_query
 from src.llm.client import CompleteFn, complete
 from src.llm.prompts import VARIANTS
@@ -36,14 +38,25 @@ def load_questions(dataset: str | None = None) -> list[dict]:
     return questions
 
 
+@lru_cache(maxsize=1)
+def table_counts() -> dict[str, int]:
+    """Number of base tables per dataset schema (for 'accuracy vs number of tables')."""
+    df = run_query("SELECT table_schema, COUNT(*) AS n FROM information_schema.tables "
+                   "WHERE table_type = 'BASE TABLE' AND table_schema = ANY(:s) GROUP BY 1",
+                   {"s": list(DATASETS)})
+    return dict(zip(df["table_schema"], df["n"].astype(int), strict=True))
+
+
 def evaluate_one(q: dict, model: str, variant: str, llm: CompleteFn = complete) -> dict:
     """Ask the model one question and score it against the gold SQL."""
     gold = run_query(q["gold_sql"], schema=q["dataset"])
     ans = answer_question(q["question"], q["dataset"], model, variant, llm=llm,
                           use_cache=False, fallback=False)
-    correct = ans.ok and results_match(gold, ans.df, ordered=has_order_by(q["gold_sql"]))
+    correct = ans.ok and results_match(gold, ans.df, ordered=has_order_by(q["gold_sql"]),
+                                       sort_keys=order_columns(q["gold_sql"], gold))
     return {
-        "id": q["id"], "dataset": q["dataset"], "difficulty": q["difficulty"],
+        "id": q["id"], "dataset": q["dataset"], "n_tables": table_counts().get(q["dataset"]),
+        "difficulty": q["difficulty"],
         "model": model, "variant": variant, "correct": bool(correct),
         "valid_sql": ans.ok, "guardrail_rejected": ans.error_kind == "guardrail",
         "llm_error": ans.error_kind == "llm", "attempts": ans.attempts,
