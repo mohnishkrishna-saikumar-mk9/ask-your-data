@@ -208,8 +208,11 @@ ask-your-data/
 │   ├── ipl/few_shots.yaml
 │   └── … same for all 8 datasets
 ├── app/
-│   ├── Home.py                # Streamlit entry
-│   └── pages/
+│   ├── Home.py                # Streamlit entry: st.navigation over app_pages/
+│   ├── dashboards.py          # per-dataset dashboard definitions (data, not code)
+│   ├── ui.py                  # shared page helpers (cached queries, dataset picker)
+│   └── app_pages/             # NOT `pages/`: that name triggers Streamlit's legacy auto-discovery
+│       ├── 0_Overview.py
 │       ├── 1_Ask.py
 │       ├── 2_Dashboard.py
 │       ├── 3_Query_Library.py
@@ -559,7 +562,7 @@ Each phase ends with: tests passing, `docs/LEARNING_NOTES.md` updated, a short s
 - [x] `knowledge/<dataset>/glossary.yaml` (all 8)
 
 ### Phase 3 — Streamlit dashboards
-- [ ] `app/Home.py`, Dashboard and Query Library pages, theme, caching
+- [x] `app/Home.py`, Dashboard and Query Library pages, theme, caching (all 8 datasets: 4 KPIs + 4 charts each, filters for 6; AppTest tests)
 
 ### Phase 4 — Text-to-SQL engine
 - [ ] `schema_context.py`, `providers.py`, `client.py`, `prompts.py`, `guardrails.py`, `text_to_sql.py`, `charts.py`, `cache.py`

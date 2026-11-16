@@ -201,3 +201,55 @@ comparator) and ran 2–3.5× faster. `EXPLAIN ANALYZE` showed why: `COUNT(DISTI
 3. **A query is slow because of COUNT(DISTINCT) after a join. What do you do?**
    Aggregate the many-side to one row per key in a CTE first, then join and count rows. Prove the
    rewrite is equivalent by comparing results, and measure before/after with EXPLAIN ANALYZE.
+
+---
+
+## Phase 3 — Streamlit app and dashboards for 8 datasets
+
+### What was built
+- `app/Home.py`: page config + `st.navigation` over five pages in `app/app_pages/`.
+- **Overview**: one card per dataset with its table and row counts, read from the PostgreSQL catalogue
+  (`pg_class.reltuples`, refreshed by `ANALYZE` in the loaders) — no dataset-specific SQL.
+- **Dashboard**: one generic renderer + `app/dashboards.py`, which describes each dataset's 4 KPI
+  tiles, 4 charts and optional filter (a year/season slider or a month multiselect) as data.
+- **Query library**: browse the 72 queries with their question, concepts, SQL, result and auto-chart.
+- Caching: `st.cache_data(ttl=3600)` on every query, so a dashboard is instant after its first load.
+- Tests: `tests/test_app.py` checks every dashboard definition and renders every page for every
+  dataset with Streamlit's `AppTest` on the fixture data.
+
+### Key concepts
+- **Configuration over code (data-driven UI).** Instead of 8 `if dataset == ...` branches, each
+  dashboard is a small data structure (dataclasses `Dashboard`, `Chart`, `Filter`). The page loops
+  over it. Adding a dataset's dashboard is one entry; the renderer never changes. This is the same
+  idea as the dataset-agnostic engine.
+- **Filters done safely.** KPI queries receive filter values as **bound parameters** (`:lo`, `:hi`,
+  `= ANY(:values)`), never string-formatted SQL. Chart data from library queries is filtered in pandas.
+- **Caching keyed on inputs.** `st.cache_data` hashes the function arguments (SQL + parameters), so
+  each filter combination is cached separately and expires after an hour.
+- **Responsive layout.** `st.grid(4)` for KPI tiles and `st.grid(2, min_column_width=380)` for charts
+  wrap to fewer columns on narrow screens.
+- **Testing the UI.** `AppTest` runs a page script without a browser and exposes its elements
+  (`at.metric`, `at.warning`, `at.exception`). The test also checks the tile labels match the
+  requested dataset — otherwise a broken dataset picker could pass by showing the same dashboard 8 times.
+
+### Bugs found while checking the running app
+- **Legacy `pages/` folder:** after a cold start, opening a deep link like `/Dashboard` ran the page
+  file directly (Streamlit's old auto-discovery), skipping `Home.py`: wrong layout and an extra "Home"
+  menu item. Renaming the folder to `app_pages/` means only `st.navigation` decides the pages.
+- **Stale imported module:** Streamlit reloads edited page scripts but not modules they import, so a
+  new dataclass field caused `'Chart' object has no attribute 'label'` until the server restarted.
+  Worth knowing when developing; not a production issue.
+
+### Interview questions
+1. **How did you avoid duplicating dashboard code for 8 datasets?**
+   I separated *what* to show from *how* to show it: dashboard definitions are data in
+   `dashboards.py`, and one renderer draws any definition. A test checks every definition is
+   complete (4 KPIs, charts point to existing queries, filters are really used by the KPI SQL).
+2. **What does `st.cache_data` cache, and when is it wrong to use it?**
+   It stores the function's return value keyed by its arguments. It is right for read-only query
+   results that may be an hour old. It is wrong for per-user secrets, data that must be live, or
+   unhashable shared objects like database engines (use `st.cache_resource` for those).
+3. **How do you test a Streamlit app?**
+   Pure logic in normal unit tests; page behaviour with `streamlit.testing.v1.AppTest` (run the script,
+   set session state or widget values, assert on the elements); and a manual check in a real browser
+   for layout, which is how the `pages/` deep-link bug was found.
