@@ -11,7 +11,6 @@ import pandas as pd
 
 from scripts._loader_utils import (
     RAW_DIR,
-    apply_mapping,
     load_tables,
     null_report,
     read_csv,
@@ -28,9 +27,13 @@ RENAMES = {
 ROUND_COLS = ["round_id", "funding_date", "startup_name", "industry_vertical", "sub_vertical",
               "city", "investment_type", "amount_usd", "remarks"]
 
-# The raw text contains escape sequences written out literally, e.g. "\\xc2\\xa0N/A", "Seed\\nFunding".
-ESCAPE_ARTEFACT = re.compile(r"(?:\\+x[0-9a-fA-F]{2})+")
+# The raw text contains UTF-8 bytes written out as literal text, e.g. "Byju\\xe2\\x80\\x99s" is
+# "Byju’s" and "\\xc2\\xa0" is a non-breaking space. We decode each run of escapes back to text.
+ESCAPED_BYTES = re.compile(r"(?:\\+x[0-9a-fA-F]{2})+")
 LITERAL_NEWLINE = re.compile(r"\\+n")
+ESCAPED_QUOTE = re.compile(r"\\+(['\"])")
+CURLY_QUOTES = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
+                              "\u2013": "-", "\u00a0": " "})
 
 # Keyed by the type with everything except letters removed and lower-cased.
 INVESTMENT_TYPES = {
@@ -43,10 +46,11 @@ INVESTMENT_TYPES = {
     "preseriesa": "Pre-Series A", "crowdfunding": "Crowd Funding",
 }
 CITIES = {"Bangalore": "Bengaluru", "Gurgaon": "Gurugram", "New Delhi": "Delhi"}
+# Keyed by lower-case name (after clean_text), so "OYO Rooms" and "Oyo Rooms" both match.
 STARTUP_NAMES = {
-    "Ola Cabs": "Ola", "Olacabs": "Ola", "Flipkart.com": "Flipkart", "Paytm Marketplace": "Paytm",
-    "Oyo": "OYO", "OYO Rooms": "OYO", "Oyo Rooms": "OYO", "OyoRooms": "OYO", "Oyorooms": "OYO",
-    "Rapido Bike Taxi": "Rapido",
+    "ola cabs": "Ola", "olacabs": "Ola", "flipkart.com": "Flipkart", "paytm marketplace": "Paytm",
+    "oyo": "OYO", "oyo rooms": "OYO", "oyorooms": "OYO", "rapido bike taxi": "Rapido",
+    "byju's": "BYJU'S",
 }
 # Amounts verified as wrong in the source. We blank them rather than guess an exchange rate.
 KNOWN_BAD_AMOUNTS = {
@@ -59,14 +63,30 @@ def is_missing(value: object) -> bool:
     return value is None or (isinstance(value, float) and value != value)
 
 
+def decode_escaped_bytes(match: re.Match) -> str:
+    """'\\\\xe2\\\\x80\\\\x99' (as text) -> the bytes e2 80 99 -> '’'. Broken sequences are dropped."""
+    hex_pairs = re.findall(r"x([0-9a-fA-F]{2})", match.group(0))
+    return bytes.fromhex("".join(hex_pairs)).decode("utf-8", errors="ignore")
+
+
 def clean_text(value: str | None) -> str | None:
-    """Remove literal escape artefacts and non-breaking spaces; empty -> None."""
+    """Decode literal byte escapes, straighten quotes, collapse spaces; empty -> None."""
     if is_missing(value):
         return None
-    text = ESCAPE_ARTEFACT.sub(" ", value)
-    text = LITERAL_NEWLINE.sub(" ", text).replace("\xa0", " ")
+    text = ESCAPED_BYTES.sub(decode_escaped_bytes, value)
+    text = LITERAL_NEWLINE.sub(" ", text)
+    text = ESCAPED_QUOTE.sub(r"\1", text).translate(CURLY_QUOTES)
     text = re.sub(r"\s+", " ", text).strip()
+    if len(text) > 1 and text[0] == text[-1] == '"':  # '"BYJU\'S"' -> BYJU'S
+        text = text[1:-1].strip()
     return text or None
+
+
+def normalise_startup_name(value: str | None) -> str | None:
+    """Merge known variants case-insensitively, e.g. 'Oyo Rooms' / 'OYO Rooms' -> 'OYO'."""
+    if is_missing(value):
+        return None
+    return STARTUP_NAMES.get(value.lower(), value)
 
 
 def parse_date(value: str | None) -> dt.date | None:
@@ -124,7 +144,10 @@ def clean_rounds(raw: pd.DataFrame) -> pd.DataFrame:
         print(f"    [amount] round {round_id} -> NULL: {reason}")
     df["investment_type"] = df["investment_type"].map(normalise_investment_type)
     df["city"] = df["city"].map(first_city)
-    df["startup_name"] = apply_mapping(df["startup_name"], STARTUP_NAMES, "name")
+    merged = df["startup_name"].map(normalise_startup_name)
+    for old, new in sorted(set(zip(df["startup_name"], merged, strict=True)) - {(n, n) for n in merged}):
+        print(f"    [name] {old!r} -> {new!r}")
+    df["startup_name"] = merged
     return df
 
 

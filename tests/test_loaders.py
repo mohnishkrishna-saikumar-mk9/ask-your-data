@@ -126,11 +126,20 @@ def test_startups_parse_amount(raw: object, expected: float | None) -> None:
     assert load_startups.parse_amount(raw) == expected
 
 
-def test_startups_clean_text_removes_literal_escapes() -> None:
-    # The raw file contains the characters backslash, backslash, x, c, 2 ... written out as text.
-    assert load_startups.clean_text(r"\\xc2\\xa0Gurgaon") == "Gurgaon"
+def test_startups_clean_text_decodes_literal_escapes() -> None:
+    # The raw file contains UTF-8 bytes written out as text: backslash, backslash, x, e, 2 ...
+    assert load_startups.clean_text(r"\\xc2\\xa0Gurgaon") == "Gurgaon"  # non-breaking space
+    assert load_startups.clean_text(r"Byju\\xe2\\x80\\x99s") == "Byju's"  # curly apostrophe
+    assert load_startups.clean_text(r"Home D\\xc3\\xa9cor") == "Home Décor"
     assert load_startups.clean_text(r"Seed\\nFunding") == "Seed Funding"
+    assert load_startups.clean_text('"BYJU\\\\\'S"') == "BYJU'S"  # escaped quote + wrapping quotes
     assert load_startups.clean_text("  ") is None
+
+
+def test_startups_name_variants_merge_case_insensitively() -> None:
+    assert load_startups.normalise_startup_name("Oyo Rooms") == "OYO"
+    assert load_startups.normalise_startup_name("BYJU's") == "BYJU'S"
+    assert load_startups.normalise_startup_name("Zomato") == "Zomato"
 
 
 def test_startups_investment_type_and_city() -> None:
