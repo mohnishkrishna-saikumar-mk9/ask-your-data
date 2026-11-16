@@ -1,0 +1,31 @@
+sl_no,gender,ssc_p,ssc_b,hsc_p,hsc_b,hsc_s,degree_p,degree_t,workex,etest_p,specialisation,mba_p,status,salary
+1,M,88.54,Central,82.33,Central,Science,80.97,Comm&Mgmt,Yes,57.75,Mkt&HR,76.85,Placed,450000
+2,M,61.05,Central,81.11,Central,Science,69.39,Sci&Tech,Yes,68.45,Mkt&HR,64.81,Placed,200000
+3,M,88.73,Central,49.2,Others,Commerce,81.71,Comm&Mgmt,No,86.28,Mkt&HR,73.24,Placed,300000
+4,F,76.52,Central,58.95,Central,Science,81.33,Sci&Tech,Yes,80.45,Mkt&HR,54.09,Placed,250000
+5,M,65.42,Others,94.72,Others,Science,71.76,Comm&Mgmt,Yes,95.03,Mkt&Fin,58.55,Placed,250000
+6,F,73.29,Central,59.5,Central,Science,62.15,Comm&Mgmt,No,51.77,Mkt&Fin,70.33,Placed,250000
+7,M,87.06,Central,77.92,Others,Arts,67.33,Sci&Tech,No,83.01,Mkt&Fin,60.57,Placed,250000
+8,F,89.18,Central,45.71,Others,Science,55.71,Comm&Mgmt,No,91.79,Mkt&HR,66.97,Placed,300000
+9,M,52.09,Others,45.18,Others,Science,84.04,Others,No,61.73,Mkt&HR,57.45,Placed,250000
+10,F,48.78,Others,70.14,Central,Commerce,67.67,Comm&Mgmt,Yes,62.68,Mkt&Fin,55.6,Placed,200000
+11,F,58.69,Central,49.22,Central,Arts,81.25,Others,No,86.69,Mkt&HR,55.74,Placed,250000
+12,F,78.02,Central,90.49,Central,Arts,70.44,Others,Yes,54.08,Mkt&Fin,55.33,Placed,300000
+13,F,82.61,Central,76.39,Central,Science,59.23,Sci&Tech,Yes,85.92,Mkt&Fin,68.48,Not Placed,
+14,F,56.35,Central,87.31,Central,Arts,76.48,Comm&Mgmt,No,73.71,Mkt&HR,53.92,Placed,300000
+15,M,48.49,Central,61.59,Others,Arts,69.87,Comm&Mgmt,No,52.91,Mkt&HR,76.31,Not Placed,
+16,M,75.41,Others,80.44,Others,Science,66.31,Comm&Mgmt,Yes,64.96,Mkt&Fin,75.41,Placed,200000
+17,M,81.9,Others,94.7,Others,Commerce,82.08,Comm&Mgmt,Yes,77.91,Mkt&Fin,70.69,Placed,300000
+18,M,72.15,Others,89.34,Others,Commerce,67.43,Sci&Tech,No,51.19,Mkt&Fin,75.75,Not Placed,
+19,F,58.59,Central,65.81,Others,Science,54.23,Sci&Tech,Yes,65.58,Mkt&HR,72.98,Placed,200000
+20,M,77.09,Others,57.66,Central,Science,63.66,Others,Yes,67.31,Mkt&HR,70.89,Not Placed,
+21,F,49.58,Others,76.75,Central,Commerce,83.99,Sci&Tech,No,59.11,Mkt&HR,71.63,Not Placed,
+22,M,81.54,Others,90.67,Central,Arts,52.82,Others,No,71.64,Mkt&Fin,68.11,Placed,300000
+23,M,52.68,Others,62.18,Others,Science,75.87,Others,No,69.5,Mkt&Fin,59.52,Placed,450000
+24,M,48.38,Others,72.52,Others,Science,84.88,Sci&Tech,No,56.7,Mkt&Fin,58.1,Placed,250000
+25,M,59.37,Others,57.92,Central,Commerce,76.24,Sci&Tech,No,69.87,Mkt&Fin,61.42,Placed,300000
+26,F,57.49,Others,51.29,Central,Commerce,59.49,Comm&Mgmt,No,69.19,Mkt&HR,62.8,Not Placed,
+27,M,50.73,Others,80.48,Others,Arts,67.14,Comm&Mgmt,No,94.65,Mkt&HR,76.31,Placed,250000
+28,M,51.95,Central,92.07,Others,Commerce,69.3,Comm&Mgmt,Yes,87.55,Mkt&Fin,66.23,Not Placed,
+29,F,88.31,Others,71.41,Others,Arts,76.73,Comm&Mgmt,Yes,64.42,Mkt&Fin,61.7,Placed,250000
+30,M,45.47,Others,94.82,Others,Science,72.56,Comm&Mgmt,No,75.26,Mkt&Fin,52.73,Not Placed,

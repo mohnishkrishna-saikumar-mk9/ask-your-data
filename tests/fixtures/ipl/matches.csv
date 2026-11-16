@@ -1,0 +1,6 @@
+id,season,city,date,match_type,player_of_match,venue,team1,team2,toss_winner,toss_decision,winner,result,result_margin,target_runs,target_overs,super_over,method,umpire1,umpire2
+1001,2007/08,Bangalore,2008-04-18,League,BB McCullum,M Chinnaswamy Stadium,Royal Challengers Bangalore,Kolkata Knight Riders,Royal Challengers Bangalore,field,Kolkata Knight Riders,runs,140,223,20,N,,A,B
+1002,2007/08,Mumbai,2008-06-01,Final,YK Pathan,"Wankhede Stadium, Mumbai",Chennai Super Kings,Kings XI Punjab,Kings XI Punjab,bat,Kings XI Punjab,wickets,3,164,20,N,,A,B
+1003,2020/21,Delhi,2020-10-05,League,V Kohli,Feroz Shah Kotla,Delhi Daredevils,Royal Challengers Bangalore,Delhi Daredevils,bat,Delhi Daredevils,runs,4,197,20,N,,A,B
+1004,2023,Ahmedabad,2023-05-29,Final,DP Conway,"Narendra Modi Stadium, Ahmedabad",Chennai Super Kings,Gujarat Titans,Chennai Super Kings,field,Chennai Super Kings,wickets,5,171,15,N,D/L,A,B
+1005,2023,Kolkata,2023-04-20,League,,"Eden Gardens, Kolkata",Kolkata Knight Riders,Sunrisers Hyderabad,Sunrisers Hyderabad,bat,,no result,,,,N,,A,B

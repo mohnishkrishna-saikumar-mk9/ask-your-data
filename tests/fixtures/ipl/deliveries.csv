@@ -1,0 +1,51 @@
+match_id,inning,batting_team,bowling_team,over,ball,batter,bowler,non_striker,batsman_runs,extra_runs,total_runs,extras_type,is_wicket,player_dismissed,dismissal_kind,fielder
+1001,1,Royal Challengers Bangalore,Kolkata Knight Riders,0,1,DP Conway,Z Khan,MS Dhoni,4,0,4,,1,DP Conway,caught,X
+1001,1,Royal Challengers Bangalore,Kolkata Knight Riders,0,2,V Kohli,Z Khan,YK Pathan,0,1,1,wides,0,,,
+1001,1,Royal Challengers Bangalore,Kolkata Knight Riders,7,1,YK Pathan,Z Khan,DP Conway,0,1,1,wides,0,,,
+1001,1,Royal Challengers Bangalore,Kolkata Knight Riders,7,2,V Kohli,Rashid Khan,V Kohli,0,0,0,,0,,,
+1001,1,Royal Challengers Bangalore,Kolkata Knight Riders,18,1,MS Dhoni,Rashid Khan,BB McCullum,0,1,1,wides,0,,,
+1001,1,Royal Challengers Bangalore,Kolkata Knight Riders,18,2,S Gill,JJ Bumrah,V Kohli,0,1,1,wides,0,,,
+1001,2,Kolkata Knight Riders,Royal Challengers Bangalore,0,1,S Gill,Z Khan,DP Conway,0,0,0,,1,S Gill,caught,X
+1001,2,Kolkata Knight Riders,Royal Challengers Bangalore,0,2,MS Dhoni,Rashid Khan,DP Conway,0,0,0,,0,,,
+1001,2,Kolkata Knight Riders,Royal Challengers Bangalore,7,1,BB McCullum,Z Khan,DP Conway,6,0,6,,0,,,
+1001,2,Kolkata Knight Riders,Royal Challengers Bangalore,7,2,MS Dhoni,Z Khan,V Kohli,4,0,4,,0,,,
+1001,2,Kolkata Knight Riders,Royal Challengers Bangalore,18,1,YK Pathan,Rashid Khan,V Kohli,0,0,0,,0,,,
+1001,2,Kolkata Knight Riders,Royal Challengers Bangalore,18,2,MS Dhoni,R Ashwin,S Gill,0,1,1,wides,0,,,
+1002,1,Chennai Super Kings,Kings XI Punjab,0,1,V Kohli,R Ashwin,YK Pathan,4,0,4,,0,,,
+1002,1,Chennai Super Kings,Kings XI Punjab,0,2,S Gill,Rashid Khan,MS Dhoni,0,1,1,legbyes,0,,,
+1002,1,Chennai Super Kings,Kings XI Punjab,7,1,YK Pathan,R Ashwin,BB McCullum,2,0,2,,1,YK Pathan,caught,X
+1002,1,Chennai Super Kings,Kings XI Punjab,7,2,MS Dhoni,JJ Bumrah,S Gill,0,1,1,wides,0,,,
+1002,1,Chennai Super Kings,Kings XI Punjab,18,1,BB McCullum,Rashid Khan,YK Pathan,1,0,1,,0,,,
+1002,1,Chennai Super Kings,Kings XI Punjab,18,2,DP Conway,R Ashwin,S Gill,0,0,0,,0,,,
+1002,2,Kings XI Punjab,Chennai Super Kings,0,1,BB McCullum,JJ Bumrah,V Kohli,6,0,6,,0,,,
+1002,2,Kings XI Punjab,Chennai Super Kings,0,2,DP Conway,JJ Bumrah,MS Dhoni,1,0,1,,1,DP Conway,caught,X
+1002,2,Kings XI Punjab,Chennai Super Kings,7,1,MS Dhoni,R Ashwin,BB McCullum,0,1,1,wides,0,,,
+1002,2,Kings XI Punjab,Chennai Super Kings,7,2,S Gill,Z Khan,YK Pathan,2,0,2,,0,,,
+1002,2,Kings XI Punjab,Chennai Super Kings,18,1,V Kohli,Rashid Khan,S Gill,2,0,2,,0,,,
+1002,2,Kings XI Punjab,Chennai Super Kings,18,2,BB McCullum,Rashid Khan,BB McCullum,0,1,1,wides,0,,,
+1003,1,Delhi Daredevils,Royal Challengers Bangalore,0,1,BB McCullum,Z Khan,MS Dhoni,0,1,1,legbyes,0,,,
+1003,1,Delhi Daredevils,Royal Challengers Bangalore,0,2,DP Conway,Rashid Khan,BB McCullum,0,1,1,wides,0,,,
+1003,1,Delhi Daredevils,Royal Challengers Bangalore,7,1,V Kohli,Z Khan,YK Pathan,2,0,2,,0,,,
+1003,1,Delhi Daredevils,Royal Challengers Bangalore,7,2,S Gill,R Ashwin,S Gill,6,0,6,,0,,,
+1003,1,Delhi Daredevils,Royal Challengers Bangalore,18,1,BB McCullum,R Ashwin,BB McCullum,4,0,4,,0,,,
+1003,1,Delhi Daredevils,Royal Challengers Bangalore,18,2,S Gill,Z Khan,S Gill,0,1,1,legbyes,0,,,
+1003,2,Royal Challengers Bangalore,Delhi Daredevils,0,1,BB McCullum,R Ashwin,S Gill,4,0,4,,0,,,
+1003,2,Royal Challengers Bangalore,Delhi Daredevils,0,2,BB McCullum,JJ Bumrah,YK Pathan,1,0,1,,0,,,
+1003,2,Royal Challengers Bangalore,Delhi Daredevils,7,1,S Gill,Z Khan,V Kohli,2,0,2,,0,,,
+1003,2,Royal Challengers Bangalore,Delhi Daredevils,7,2,MS Dhoni,Rashid Khan,S Gill,4,0,4,,0,,,
+1003,2,Royal Challengers Bangalore,Delhi Daredevils,18,1,BB McCullum,Rashid Khan,BB McCullum,4,0,4,,0,,,
+1003,2,Royal Challengers Bangalore,Delhi Daredevils,18,2,V Kohli,Rashid Khan,S Gill,4,0,4,,0,,,
+1004,1,Chennai Super Kings,Gujarat Titans,0,1,YK Pathan,JJ Bumrah,YK Pathan,4,0,4,,0,,,
+1004,1,Chennai Super Kings,Gujarat Titans,0,2,S Gill,Rashid Khan,YK Pathan,1,0,1,,1,S Gill,caught,X
+1004,1,Chennai Super Kings,Gujarat Titans,7,1,BB McCullum,Z Khan,BB McCullum,6,0,6,,0,,,
+1004,1,Chennai Super Kings,Gujarat Titans,7,2,DP Conway,Rashid Khan,S Gill,0,0,0,,0,,,
+1004,1,Chennai Super Kings,Gujarat Titans,18,1,S Gill,Z Khan,DP Conway,4,0,4,,1,S Gill,caught,X
+1004,1,Chennai Super Kings,Gujarat Titans,18,2,BB McCullum,Z Khan,MS Dhoni,2,0,2,,0,,,
+1004,2,Gujarat Titans,Chennai Super Kings,0,1,MS Dhoni,Rashid Khan,BB McCullum,1,0,1,,0,,,
+1004,2,Gujarat Titans,Chennai Super Kings,0,2,DP Conway,Rashid Khan,DP Conway,0,0,0,,0,,,
+1004,2,Gujarat Titans,Chennai Super Kings,7,1,YK Pathan,JJ Bumrah,DP Conway,1,0,1,,1,YK Pathan,caught,X
+1004,2,Gujarat Titans,Chennai Super Kings,7,2,DP Conway,Z Khan,DP Conway,0,0,0,,0,,,
+1004,2,Gujarat Titans,Chennai Super Kings,18,1,V Kohli,Z Khan,BB McCullum,0,0,0,,0,,,
+1004,2,Gujarat Titans,Chennai Super Kings,18,2,DP Conway,Z Khan,V Kohli,1,0,1,,0,,,
+1004,3,Gujarat Titans,Chennai Super Kings,0,1,S Gill,R Ashwin,DP Conway,4,0,4,,0,,,
+1001,1,Royal Challengers Bangalore,Kolkata Knight Riders,19,3,V Kohli,Z Khan,BB McCullum,0,0,0,,1,V Kohli,run out,Y
