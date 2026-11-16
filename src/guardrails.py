@@ -87,4 +87,5 @@ def validate_sql(sql: str, schema: str, dialect: str = SQL_DIALECT) -> str:
     _check_is_select(tree)
     _check_tables(tree, schema)
     _check_functions(tree)
-    return _ensure_limit(tree).sql(dialect=dialect)
+    # pretty=True: one clause per line, so the SQL shown to users is readable. Same tree, same meaning.
+    return _ensure_limit(tree).sql(dialect=dialect, pretty=True)
