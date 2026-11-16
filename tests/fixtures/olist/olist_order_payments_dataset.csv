@@ -1,0 +1,13 @@
+order_id,payment_sequential,payment_type,payment_installments,payment_value
+1b9ecfe83cdc259250e1a8aca174f0ad,1,boleto,1,33.34
+a657f4281fa25af13388496f1075850d,1,credit_card,5,53.38
+714fb133a6730ab81fa1d3c1b2007291,1,credit_card,4,96.01
+175f436110df7b451689d7d969ec64f5,1,credit_card,1,127.53
+4ac8967b6c44825655969aa13a7e6213,1,debit_card,1,24.68
+1cc47b4855c5d2cf01a73dc8ae838079,1,boleto,1,246.28
+30df6364a7029642408b5fbf8556ef21,1,credit_card,8,91.03
+b56522f2eb41c4d499be5f343973d5cf,1,credit_card,8,440.12
+8b39b1a490a2cc8906ec4b08ef88a40c,1,credit_card,10,166.68
+136cce7faa42fdb2cefd53fdc79a6098,1,credit_card,1,65.95
+63e9f378e99a3e83709e85223d637944,1,credit_card,3,418.04
+40ec2cf5cb1eb0bf1ea2b117552fecb5,1,credit_card,2,90.28
