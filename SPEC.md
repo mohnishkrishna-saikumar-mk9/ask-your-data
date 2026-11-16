@@ -512,7 +512,9 @@ cache lookup → build prompt → LLM → extract SQL → guardrails → run →
 - **Eval questions must not duplicate few-shot examples.**
 - Every `gold_sql` must run successfully — add a test that executes all of them.
 
-**Metric — execution accuracy** (`eval/compare.py`): run gold and predicted SQL; normalise values (round floats to 2 dp, strip strings, NULL-safe); compare as **multisets of rows**, column-order-insensitive; if gold has a top-level ORDER BY, also require the same order. Also record valid-SQL rate, guardrail rejections, retries used, latency p50/p95.
+**Metric — execution accuracy** (`eval/compare.py`): run gold and predicted SQL; normalise values (strip strings, NULL-safe, dates as ISO text); compare as **multisets of rows**, column-order-insensitive (columns matched by their values; extra predicted columns allowed); if gold has a top-level ORDER BY, also require the same order **of the sort-key values** (rows that tie on the sort key may appear in either order). Also record valid-SQL rate, guardrail rejections, retries used, latency p50/p95.
+*Changed during Phase 5:* numbers are compared **precision-aware** instead of "round to 2 dp" — the more precise value is rounded to the other's decimals (gold 12.5 vs predicted 12.4637 = equal; 12.4 ≠ 12.5; whole numbers must match exactly). 16 of the original 100 gold queries rounded to 0-1 dp, so the 2-dp rule marked correct answers wrong.
+*Benchmark checks:* `python -m eval.sanity_check` — a perfect model (gold SQL through the full pipeline) must score 100% and a negative control (another question's gold SQL) ~0%. Questions were also audited for ties at a LIMIT cut-off (two valid top-N answers) and reworded where needed.
 
 **Outputs:** `eval/results/<timestamp>_<model>_<variant>.csv` (per question) and `eval/results/summary.md` (table: model × variant × dataset → accuracy, p50 latency). README shows the best table plus 2–3 sentences of findings (e.g. "glossary raised hard-question accuracy from X% to Y%").
 
@@ -571,9 +573,9 @@ Each phase ends with: tests passing, `docs/LEARNING_NOTES.md` updated, a short s
 - [x] Unit tests for guardrails, extraction, charts (mocked LLM); end-to-end engine test per dataset; guardrail rewrite proven not to change results
 
 ### Phase 5 — Evaluation
-- [ ] 160 questions with gold SQL (20 × 8 datasets); test that all gold SQL runs
-- [ ] Results table per dataset + chart of accuracy vs number of tables
-- [ ] `compare.py`, `run_eval.py`; run 3 models × 3 variants
+- [x] 160 questions with gold SQL (20 × 8 datasets, 6 easy / 9 medium / 5 hard each); test that all gold SQL runs (+ passes guardrails; perfect model 160/160, negative control 0/160 on real data)
+- [x] Results table per dataset + chart of accuracy vs number of tables (summary.md + Evaluation page)
+- [ ] `compare.py`, `run_eval.py`; run 3 models × 3 variants — code done and dry-run tested; the real runs need API keys in `.env`
 - [ ] `summary.md` + Evaluation page; findings into README
 
 ### Phase 6 — Quality & CI

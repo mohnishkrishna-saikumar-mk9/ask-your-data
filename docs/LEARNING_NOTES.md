@@ -300,3 +300,51 @@ work — and proved they work — on all 8:
    Make the model call a parameter (dependency injection). Unit tests pass a fake that returns scripted
    replies to cover success, self-correction, fallback and guardrail rejection. For an end-to-end UI
    check, point the real client at a local fake server that speaks the same API.
+
+---
+
+## Phase 5 — The benchmark (160 questions) and how to trust it
+
+### What was built
+- `eval/questions/<dataset>.jsonl`: 20 questions per dataset (6 easy, 9 medium, 5 hard), each with
+  hand-written gold SQL. 60 kept from the first version, 100 new for the 5 new datasets.
+- `eval/compare.py` (rewritten): execution accuracy with precision-aware numbers and tie-aware ordering.
+- `eval/run_eval.py`: one model + prompt variant over all questions → a CSV per run, now including
+  each dataset's number of tables.
+- `eval/summarize.py`: combines the newest **complete** run per model × variant (partial smoke runs are
+  skipped) into `summary.md`, including an "accuracy vs number of tables" table.
+- `eval/sanity_check.py`: checks the benchmark itself (perfect model and negative control).
+- Evaluation page: accuracy per model × prompt, a line chart of accuracy vs number of tables, and
+  per-dataset and per-difficulty tables.
+
+### Key concepts
+- **Execution accuracy** compares *results*, not SQL text — there are many correct ways to write a query.
+- **A benchmark can be unfair in both directions.** Too strict marks correct answers wrong; too lenient
+  marks wrong answers right. Both were measured, not assumed:
+  - *Perfect model*: answering every question with its own gold SQL through the whole pipeline must score
+    100%. It found a gold query aliased `AS drop` — PostgreSQL accepts it but the guardrails' parser
+    does not, so a model copying it would have been rejected.
+  - *Negative control*: answering with a *different* question's gold SQL should score ~0%. It scored 0/160.
+- **Precision-aware number matching.** "Round both to 2 decimals" marked `12.4637` wrong against a gold
+  answer of `12.5` (gold rounded to 1 dp). Rounding the more precise value to the other's precision
+  accepts harmless rounding differences while still rejecting real differences (12.4 vs 12.5) and keeping
+  counts exact.
+- **Ties.** Two kinds: (1) rows tied on the sort key inside an ordered answer — fixed in the comparator by
+  checking only the order of the sort-key values; (2) a tie exactly at a `LIMIT` cut-off ("top 5" when
+  #5 and #6 are equal) — two different answers are both right, so the *question* must change. An audit
+  script found 4 such questions; they were changed to tie-free cut-offs.
+- **No data leakage.** A test fails if any few-shot example also appears as a benchmark question.
+- **Accuracy vs schema size** is the headline analysis: the 8 datasets go from 1 table to 11, so the
+  results can show whether accuracy drops as schemas grow and how much the glossary/examples recover.
+
+### Interview questions
+1. **Why execution accuracy instead of exact SQL match?**
+   `COUNT(*)` vs `COUNT(id)`, a JOIN vs a subquery, different aliases — all correct, all different text.
+   Comparing results measures what the user cares about: the answer.
+2. **How do you know your evaluation itself is correct?**
+   A perfect model must score 100% (proves every question is answerable and the scorer isn't too strict),
+   a negative control must score ~0% (proves it isn't too lenient), unit tests cover each comparison rule,
+   and an audit checks questions for ties that would allow two valid answers.
+3. **What is data leakage in an LLM benchmark, and how did you prevent it?**
+   If a test question also appears in the prompt's examples, the model can copy the answer, inflating the
+   score. The few-shot files and the benchmark are kept separate and a test enforces it.
