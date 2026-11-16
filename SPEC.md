@@ -295,6 +295,11 @@ README must credit every source and its license.
 - **Source:** Kaggle "E-Commerce Sales Dataset" → `Amazon Sale Report.csv` (Indian Amazon seller data, 2022)
 - **Real raw columns:** `index, Order ID, Date, Status, Fulfilment, Sales Channel␠ (trailing space), ship-service-level, Style, SKU, Category, Size, ASIN, Courier Status, Qty, currency, Amount, ship-city, ship-state, ship-postal-code, ship-country, promotion-ids, B2B, fulfilled-by, Unnamed: 22`
 - **Side files also loaded:** `International sale Report.csv` (`DATE, Months, CUSTOMER, Style, SKU, Size, PCS, RATE, GROSS AMT`) → `ecommerce.international_sales`; `Sale Report.csv` (`SKU Code, Design No., Stock, Category, Size, Color`) → `ecommerce.inventory`. Ignore `Cloud Warehouse Compersion Chart.csv`, `Expense IIGF.csv`, `May-2022.csv`, `P  L March 2021.csv` (messy layout, low value). Note: one SKU can appear with an order_id more than once — check uniqueness of (order_id, sku) before choosing keys.
+  **Profiling finding (2026-11-16):** `International sale Report.csv` contains block A (18,635 rows, correct
+  columns), block B (17,756 rows: the same sales pasted again one column to the right — a duplicate) and
+  1,041 stock-list rows. Load **block A only**. `Sale Report.csv` has 83 blank and 18 duplicated SKU codes
+  (keep the first). Tables: `international_sales(id PK, sale_date, customer, style, sku, size, pcs, rate,
+  gross_amount)`, `inventory(sku PK, design_no, stock, category, size, color)`.
 
 **Cleaning rules**
 - Column names → snake_case. Date format is `MM-DD-YY` → DATE.
@@ -338,7 +343,10 @@ README must credit every source and its license.
 - **Cleaning rules** (log every fix):
   - Dates: mostly `dd/mm/yyyy`, but fix known typos (e.g. `12/05.2015`, `13/04.2015`, `15/01.2015`, `22/01//2015`, `01/07/015`) — parse with a tolerant function; unparseable → NULL and report.
   - Amount: strip commas; `undisclosed`, `unknown`, `Undisclosed`, `N/A`, empty → NULL; store as NUMERIC USD.
-  - Remove `\\xc2\\xa0` / `\xa0` artefacts in all text columns.
+  - Remove `\\xc2\\xa0` / `\xa0` artefacts in all text columns. **Finding:** these (and `Seed\\nFunding`) are
+    literal backslash text in the file, not real characters — strip them with a regex.
+  - Also seen: `05/072018` (missing slash); amounts in Indian digit grouping (`20,00,00,000`) and `14,342,000+`.
+  - **Known source error:** round 61 (Rapido, Aug 2019) `3,90,00,00,000` is ₹390 crore entered as USD → NULL.
   - Normalise `investment_type` variants (`Seed/ Angel Funding`, `Seed / Angel Funding`, `SeedFunding`, `Seed\\nFunding` → `Seed / Angel`; `PrivateEquity`, `Private Equity Round` → `Private Equity`; `Debt-Funding` → `Debt Funding`; keep a mapping dict).
   - Normalise cities (`Bangalore`/`Bengaluru` → `Bengaluru`, `Gurgaon`/`Gurugram` → `Gurugram`, `New Delhi`/`Delhi` → `Delhi`; take the first city when there are several like `Bangalore / USA`).
   - Normalise obvious startup-name variants for the top companies (e.g. `Ola`/`Ola Cabs`/`Olacabs`, `Flipkart`/`Flipkart.com`, `Paytm`/`Paytm Marketplace`, `Oyo`/`OYO Rooms`).
@@ -541,9 +549,9 @@ Each phase ends with: tests passing, `docs/LEARNING_NOTES.md` updated, a short s
 - [x] `scripts/load_ipl.py` with all cleaning rules + a printed load report (rows, nulls, mappings applied)
 - [x] Sanity checks: matches per season, total deliveries, no orphan match_ids
 - [x] Update `DATASETS`, `00_create_schemas.sql`, `check_setup.py` to all 8 schemas
-- [ ] Loaders in this order (easy → hard): placements, netflix, startups, air_quality, ecommerce, olist, chinook (IPL first as the reference loader); `scripts/load_all.py`
-- [ ] `docs/DATA_SOURCES.md`: source URL, license, rows loaded, cleaning decisions per dataset
-- [ ] Fixture CSVs + `tests/test_loaders.py`
+- [x] Loaders in this order (easy → hard): placements, netflix, startups, air_quality, ecommerce, olist, chinook (IPL first as the reference loader); `scripts/load_all.py`
+- [x] `docs/DATA_SOURCES.md`: source URL, license, rows loaded, cleaning decisions per dataset (Kaggle licences still to be copied from each page)
+- [x] Fixture CSVs + `tests/test_loaders.py`
 
 ### Phase 2 — SQL analysis
 - [ ] 72 queries (Section 8: IPL 20, e-commerce 10, placements 10, olist 8, startups 6, air quality 6, netflix 6, chinook 6), each with header comment

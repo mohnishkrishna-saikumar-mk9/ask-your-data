@@ -92,3 +92,54 @@ interviewer is likely to ask. Read these before an interview.
    A view is always in sync with the base tables and costs nothing to maintain. If it became too
    slow I would switch to a materialized view refreshed by the loader — a trade of freshness for
    speed.
+
+---
+
+## Phase 1 (continued) — the other 7 datasets
+
+### What was built
+Seven more loaders, one per dataset, all following the IPL pattern (pure cleaning functions →
+one transactional load → report). After Phase 1 the database holds 8 schemas with 1 to 11 tables
+each, every table and column commented. Details per dataset: `docs/DATA_SOURCES.md`.
+
+### Key concepts
+- **Bridge tables for many-to-many (Netflix).** One cell like `"India, United States"` breaks
+  First Normal Form (one value per cell). Splitting it into `title_countries(show_id, country)`
+  lets SQL answer "how many Indian titles?" with a simple join instead of string matching.
+- **Profile before you trust (e-commerce).** The international sales file looked fine in the
+  first rows, but half of it was the *same sales pasted again* one column to the right. Loading
+  everything would have doubled revenue. I proved the duplication by matching rows between the
+  two blocks (100% overlap) before dropping one — a decision backed by evidence, not a guess.
+- **Tolerant parsing (startups).** Real dates looked like `12/05.2015`, `05/072018` and `01/07/015`.
+  One regex `(\d{1,2})\D+(\d{1,2})\D*(\d{3,4})` plus a real date check parsed all 3,044 of them;
+  anything still invalid (like 31 February) becomes NULL and is reported.
+- **Outlier detection with domain knowledge (startups).** Rapido showed $3.9 billion — larger
+  than Flipkart. The raw value was ₹390 crore entered as dollars. I set it to NULL instead of
+  inventing an exchange rate: wrong data is worse than missing data, and the decision is logged.
+- **Aggregating to the right grain (Olist).** Geolocation has 1M rows with many points per zip
+  prefix. Joining it directly would multiply rows (fan-out). It is aggregated to one row per prefix
+  first, so every join stays one-to-one.
+- **Surrogate keys when the natural key isn't unique.** Olist's `review_id` repeats, and identical
+  international sales lines are real repeat sales, so both tables get a generated `id` primary key.
+- **Running a vendor SQL script safely (Chinook).** The script expects to own a whole database.
+  The loader strips the database-level lines and runs the rest inside our schema. It drops the
+  tables, not the schema, so the read-only user's default privileges survive.
+- **A regex lesson.** `[^;]*` ("anything except `;`") also matches newlines. My first pattern ran
+  from the words "Drop database" in a comment banner all the way to the next `;`, deleting the
+  comment's closing `*/`. Fix: `[^;\n]*`. A regression test now covers it.
+- **Fixtures with the hard cases.** Test fixtures are small samples of real rows that always
+  include the tricky ones (typo dates, misplaced ratings, shifted rows, duplicate SKUs), so every
+  cleaning rule is exercised in CI without the 300 MB of raw data.
+
+### Interview questions
+1. **How do you model a column that holds a comma-separated list?**
+   Split it into a bridge table with one row per (entity, value) and a composite primary key. It
+   follows First Normal Form, makes filtering and counting simple joins, and can be indexed.
+2. **You find a value that looks wrong in the source data. What do you do?**
+   Verify it against the raw file and an outside fact, then decide: fix it only if the correct
+   value is certain, otherwise set it to NULL. Either way log the decision in the loader and the
+   data documentation so the analysis stays reproducible and honest.
+3. **What is a fan-out join and how did you avoid it?**
+   Joining to a table with several rows per key multiplies the rows on the other side, so SUMs
+   become too large. I aggregated geolocation to one row per zip prefix before it can be joined,
+   and added primary keys so the database guarantees the grain.
