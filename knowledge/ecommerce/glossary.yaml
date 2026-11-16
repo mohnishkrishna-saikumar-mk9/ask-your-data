@@ -12,3 +12,5 @@ notes:
   - "Revenue lives in order_items.amount; join order_items to orders on order_id and to products on sku."
   - "State names are Title Case, e.g. 'Maharashtra', 'Karnataka', 'Tamil Nadu', 'Delhi'."
   - "Data covers roughly April-June 2022."
+  - "international_sales holds the seller's international / wholesale sales (Jun 2021 - May 2022). International revenue = SUM(gross_amount). It is separate from the Amazon orders."
+  - "inventory holds stock on hand per SKU (one snapshot). Join to products on sku."

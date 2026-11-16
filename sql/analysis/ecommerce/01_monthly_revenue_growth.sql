@@ -1,12 +1,19 @@
 -- Q: What is the monthly revenue and month-over-month growth?
--- Concepts: CTE, date_trunc, JOIN, LAG() window function, percentage change
+-- Concepts: aggregate-before-join CTE, date_trunc, JOIN, LAG() window function, percentage change
 -- Result: month | revenue | orders | prev_revenue | mom_growth_pct
-WITH monthly AS (
+-- Note: order lines are summed per order first, so orders can be counted with COUNT(*)
+--       instead of a slower COUNT(DISTINCT) over the joined rows.
+WITH order_totals AS (
+    SELECT order_id, SUM(amount) AS order_value
+    FROM ecommerce.order_items
+    GROUP BY order_id
+),
+monthly AS (
     SELECT date_trunc('month', o.order_date)::date AS month,
-           SUM(i.amount)                           AS revenue,
-           COUNT(DISTINCT o.order_id)              AS orders
+           SUM(t.order_value)                      AS revenue,
+           COUNT(*)                                AS orders
     FROM ecommerce.orders o
-    JOIN ecommerce.order_items i ON i.order_id = o.order_id
+    JOIN order_totals t ON t.order_id = o.order_id
     WHERE o.status NOT LIKE 'Cancelled%'
     GROUP BY 1
 )
