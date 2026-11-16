@@ -1,0 +1,18 @@
+# Data + database
+pandas>=2.2
+sqlalchemy>=2.0
+psycopg[binary]>=3.2
+python-dotenv>=1.0
+pyyaml>=6.0       # knowledge/*.yaml (glossary + few-shot examples)
+
+# App + charts
+streamlit>=1.40
+plotly>=5.24
+
+# LLM + SQL safety
+openai>=1.50      # works with Groq / Gemini / OpenRouter / Ollama (OpenAI-compatible APIs)
+sqlglot>=25.0     # parses SQL so we can block anything that isn't a SELECT
+
+# Testing + lint
+pytest>=8.0
+ruff>=0.6

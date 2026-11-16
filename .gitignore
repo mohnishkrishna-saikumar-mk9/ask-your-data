@@ -1,0 +1,32 @@
+# secrets
+.env
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# raw data (too big for GitHub - README explains where to download it)
+data/raw/**
+!data/raw/**/.gitkeep
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# lint / cache / build
+.ruff_cache/
+.cache/
+*.pkl
+*.db
+*.sqlite
+*.mp4
+*.mov
+*.docx
+*.pptx
+
+# streamlit secrets (deployment keys)
+.streamlit/secrets.toml
