@@ -159,13 +159,18 @@ def order_columns(sql: str, result: pd.DataFrame) -> list[int] | None:
 
 
 def results_match(gold: pd.DataFrame, pred: pd.DataFrame, ordered: bool = False,
-                  sort_keys: list[int] | None = None) -> bool:
+                  sort_keys: list[int] | None = None,
+                  key_columns: list[str] | None = None) -> bool:
     """Execution accuracy for one question.
 
     ordered=True requires the same row order. If `sort_keys` (gold column positions from the gold
     ORDER BY) are given, only the order of those values must match, so rows that tie on the
     sort key may appear in any order - both orders are correct answers.
+    key_columns: the gold columns a correct answer must contain (e.g. just the city for "Which
+    city ...?"); other gold columns such as supporting counts become optional.
     """
+    if key_columns:
+        gold = gold[key_columns]
     if len(gold) != len(pred) or pred.shape[1] < gold.shape[1]:
         return False
     columns = align_columns(gold, pred)

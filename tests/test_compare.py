@@ -96,9 +96,36 @@ def test_eval_questions_not_in_few_shots() -> None:
 
 
 def test_jsonl_is_valid() -> None:
+    required = {"id", "dataset", "difficulty", "question", "gold_sql", "ordered"}
     for path in Path("eval/questions").glob("*.jsonl"):
         for line in path.read_text(encoding="utf-8").splitlines():
-            assert set(json.loads(line)) == {"id", "dataset", "difficulty", "question", "gold_sql"}
+            q = json.loads(line)
+            assert required <= set(q) <= required | {"key_columns"}, q["id"]
+            assert isinstance(q["ordered"], bool)
+
+
+@pytest.mark.parametrize("q", [q for q in QUESTIONS if q.get("key_columns")], ids=lambda q: q["id"])
+def test_key_columns_exist_in_gold_output(q: dict) -> None:
+    import sqlglot
+
+    names = [s.alias_or_name for s in sqlglot.parse_one(q["gold_sql"], read="postgres").selects]
+    assert set(q["key_columns"]) <= set(names)
+
+
+def test_key_columns_make_supporting_columns_optional() -> None:
+    gold = df(city=["Delhi"], severe_days=[400])
+    assert results_match(gold, df(city=["Delhi"]), key_columns=["city"])  # "Which city ...?"
+    assert not results_match(gold, df(city=["Delhi"]))                    # without the rule
+    assert not results_match(gold, df(city=["Patna"]), key_columns=["city"])
+
+
+def test_unrequested_order_is_ignored() -> None:
+    from eval.run_eval import answer_is_correct
+
+    q = {"gold_sql": "SELECT city, n FROM t ORDER BY n DESC", "ordered": False}
+    gold = df(city=["A", "B"], n=[5, 3])
+    assert answer_is_correct(q, gold, df(city=["B", "A"], n=[3, 5]))
+    assert not answer_is_correct({**q, "ordered": True}, gold, df(city=["B", "A"], n=[3, 5]))
 
 
 @pytest.mark.parametrize("q", QUESTIONS, ids=lambda q: q["id"])

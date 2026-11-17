@@ -47,13 +47,22 @@ def table_counts() -> dict[str, int]:
     return dict(zip(df["table_schema"], df["n"].astype(int), strict=True))
 
 
+def answer_is_correct(q: dict, gold: pd.DataFrame, pred: pd.DataFrame) -> bool:
+    """Score one answer with the question's own rules (see eval/questions/*.jsonl):
+    `ordered` - must the row order match? (default: only if the gold SQL has ORDER BY);
+    `key_columns` - which gold columns must be present (default: all)."""
+    ordered = q.get("ordered", has_order_by(q["gold_sql"]))
+    sort_keys = order_columns(q["gold_sql"], gold) if ordered else None
+    return results_match(gold, pred, ordered=ordered, sort_keys=sort_keys,
+                         key_columns=q.get("key_columns"))
+
+
 def evaluate_one(q: dict, model: str, variant: str, llm: CompleteFn = complete) -> dict:
     """Ask the model one question and score it against the gold SQL."""
     gold = run_query(q["gold_sql"], schema=q["dataset"])
     ans = answer_question(q["question"], q["dataset"], model, variant, llm=llm,
                           use_cache=False, fallback=False)
-    correct = ans.ok and results_match(gold, ans.df, ordered=has_order_by(q["gold_sql"]),
-                                       sort_keys=order_columns(q["gold_sql"], gold))
+    correct = ans.ok and answer_is_correct(q, gold, ans.df)
     return {
         "id": q["id"], "dataset": q["dataset"], "n_tables": table_counts().get(q["dataset"]),
         "difficulty": q["difficulty"],
@@ -71,7 +80,8 @@ def print_summary(df: pd.DataFrame) -> None:
     print(f"\nExecution accuracy: {df['correct'].mean():.1%}  "
           f"valid SQL: {df['valid_sql'].mean():.1%}  "
           f"guardrail rejections: {int(df['guardrail_rejected'].sum())}  "
-          f"retries used: {int((df['attempts'] > 1).sum())}")
+          f"retries used: {int((df['attempts'] > 1).sum())}  "
+          f"LLM/provider errors: {int(df['llm_error'].sum())}")
     print(f"Latency p50 {df['latency_ms'].quantile(0.5):,.0f} ms, "
           f"p95 {df['latency_ms'].quantile(0.95):,.0f} ms")
     for col in ("dataset", "difficulty"):
@@ -79,33 +89,59 @@ def print_summary(df: pd.DataFrame) -> None:
               .rename(columns={"mean": "accuracy"}).round(3).to_string(), "\n")
 
 
+RATE_LIMIT_WAITS = (30, 60, 120)  # seconds to wait before retrying a rate-limited question
+
+
+def is_rate_limited(row: dict) -> bool:
+    """The provider refused for quota reasons - not the model's mistake, so retry it."""
+    text = row["error"].lower()
+    return row["llm_error"] and any(s in text for s in ("429", "rate limit", "rate_limit", "too many"))
+
+
+def evaluate_with_retry(q: dict, model: str, variant: str) -> dict:
+    """evaluate_one, waiting and retrying when the provider rate-limits us."""
+    row = evaluate_one(q, model, variant)
+    for wait in RATE_LIMIT_WAITS:
+        if not is_rate_limited(row):
+            break
+        print(f"      rate limited - waiting {wait}s and retrying {q['id']}")
+        time.sleep(wait)
+        row = evaluate_one(q, model, variant)
+    return row
+
+
+def run(model: str, variant: str, dataset: str | None = None, limit: int | None = None,
+        sleep: float = 0.0) -> Path:
+    """Evaluate one model + prompt variant. The CSV is saved after every question, so an
+    interrupted run keeps its progress (summarize ignores incomplete runs)."""
+    questions = load_questions(dataset)[:limit]
+    RESULTS_DIR.mkdir(exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_model = re.sub(r"[^A-Za-z0-9.-]+", "-", model)
+    out = RESULTS_DIR / f"{stamp}_{safe_model}_{variant}.csv"
+    rows = []
+    for i, q in enumerate(questions, 1):
+        row = evaluate_with_retry(q, model, variant)
+        rows.append(row)
+        pd.DataFrame(rows).to_csv(out, index=False)
+        mark = "OK " if row["correct"] else ("ERR" if row["llm_error"] else "BAD")
+        print(f"[{i:3}/{len(questions)}] {mark} {q['id']} {row['latency_ms']:6} ms  {row['error'][:60]}")
+        time.sleep(sleep)
+    print_summary(pd.DataFrame(rows))
+    print(f"Saved {out.relative_to(EVAL_DIR.parent)}")
+    return out
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", required=True, help="provider:model_id")
     parser.add_argument("--prompt", default="full", choices=VARIANTS)
-    parser.add_argument("--dataset", choices=["ipl", "ecommerce", "placements"])
+    parser.add_argument("--dataset", choices=list(DATASETS))
     parser.add_argument("--limit", type=int, help="only the first N questions (smoke test)")
     parser.add_argument("--sleep", type=float, default=0.0,
                         help="seconds to wait between questions (free-tier rate limits)")
     args = parser.parse_args()
-
-    questions = load_questions(args.dataset)[: args.limit]
-    rows = []
-    for i, q in enumerate(questions, 1):
-        row = evaluate_one(q, args.model, args.prompt)
-        rows.append(row)
-        mark = "OK " if row["correct"] else "BAD"
-        print(f"[{i:3}/{len(questions)}] {mark} {q['id']} {row['latency_ms']:6} ms  {row['error'][:60]}")
-        time.sleep(args.sleep)
-
-    df = pd.DataFrame(rows)
-    RESULTS_DIR.mkdir(exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    safe_model = re.sub(r"[^A-Za-z0-9.-]+", "-", args.model)
-    out = RESULTS_DIR / f"{stamp}_{safe_model}_{args.prompt}.csv"
-    df.to_csv(out, index=False)
-    print_summary(df)
-    print(f"Saved {out.relative_to(EVAL_DIR.parent)}")
+    run(args.model, args.prompt, args.dataset, args.limit, args.sleep)
 
 
 if __name__ == "__main__":
