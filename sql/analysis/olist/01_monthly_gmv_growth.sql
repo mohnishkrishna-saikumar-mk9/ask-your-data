@@ -1,14 +1,20 @@
 -- Q: What is the monthly GMV (gross merchandise value) and its month-over-month growth?
--- Concepts: CTE, date_trunc, INNER JOIN, LAG() window function, percentage change, NULLIF
+-- Concepts: aggregate-before-join CTEs, date_trunc, LAG() window function, percentage change, NULLIF
 -- Result: month | orders | gmv | prev_gmv | mom_growth_pct
 -- Note: limited to Jan 2017 - Aug 2018. Before that there are only a handful of test orders
 --       (growth of +1,000,000% is meaningless) and Sep-Oct 2018 are incomplete months.
-WITH monthly AS (
+--       Items are summed per order first, so orders are counted with COUNT(*), not COUNT(DISTINCT).
+WITH order_gmv AS (
+    SELECT order_id, SUM(price) AS gmv
+    FROM olist.order_items
+    GROUP BY order_id
+),
+monthly AS (
     SELECT date_trunc('month', o.order_purchase_timestamp)::date AS month,
-           COUNT(DISTINCT o.order_id)                            AS orders,
-           SUM(i.price)                                          AS gmv
+           COUNT(*)                                              AS orders,
+           SUM(g.gmv)                                            AS gmv
     FROM olist.orders o
-    JOIN olist.order_items i ON i.order_id = o.order_id
+    JOIN order_gmv g ON g.order_id = o.order_id
     WHERE o.order_purchase_timestamp >= TIMESTAMP '2017-01-01'
       AND o.order_purchase_timestamp <  TIMESTAMP '2018-09-01'
     GROUP BY 1
