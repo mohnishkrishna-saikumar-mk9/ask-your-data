@@ -53,6 +53,7 @@ def format_value(value: object) -> str:
 
 
 def chart_data(chart: Chart) -> pd.DataFrame:
+    """Data for one chart: its library query or its own SQL, numbers as floats."""
     sql = chart.sql or get_query(dataset, chart.query).sql
     return numeric_frame(cached_query(sql, schema=dataset))
 

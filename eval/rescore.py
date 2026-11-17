@@ -37,6 +37,7 @@ def rescore_file(path: Path, questions: dict[str, dict]) -> tuple[int, int]:
 
 
 def main() -> None:
+    """Re-score the CSV files given on the command line, or every saved run."""
     questions = {q["id"]: q for q in load_questions()}
     paths = [Path(p) for p in sys.argv[1:]] or sorted(RESULTS_DIR.glob("2*_*.csv"))
     for path in paths:

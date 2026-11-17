@@ -31,11 +31,13 @@ def to_timestamps(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
 
 
 def clean_customers(raw: pd.DataFrame) -> pd.DataFrame:
+    """Drop the 'customer_' prefix from column names."""
     return raw.rename(columns={"customer_zip_code_prefix": "zip_code_prefix",
                                "customer_city": "city", "customer_state": "state"})
 
 
 def clean_sellers(raw: pd.DataFrame) -> pd.DataFrame:
+    """Drop the 'seller_' prefix from column names."""
     return raw.rename(columns={"seller_zip_code_prefix": "zip_code_prefix",
                                "seller_city": "city", "seller_state": "state"})
 
@@ -66,6 +68,7 @@ def build_zip_locations(geo: pd.DataFrame) -> pd.DataFrame:
 
 
 def main(raw_dir: Path = RAW_DIR / "olist") -> None:
+    """Read, clean and load the 9 Olist files into 8 tables."""
     print("Loading Olist ...")
     customers = clean_customers(read(raw_dir, "customers"))
     sellers = clean_sellers(read(raw_dir, "sellers"))

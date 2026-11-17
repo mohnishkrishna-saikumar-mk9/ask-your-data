@@ -127,6 +127,7 @@ def clean_inventory(raw: pd.DataFrame) -> pd.DataFrame:
 
 
 def main(raw_dir: Path = RAW_DIR / "ecommerce") -> None:
+    """Read, clean and load the Amazon report plus the two side files."""
     print("Loading e-commerce ...")
     raw = read_csv(raw_dir / CSV_NAME)
     df = clean_sales(raw)

@@ -57,6 +57,7 @@ def explode_list(raw: pd.DataFrame, list_col: str, value_col: str) -> pd.DataFra
 
 
 def main(raw_dir: Path = RAW_DIR / "netflix") -> None:
+    """Read, clean and load titles and the four bridge tables."""
     print("Loading Netflix ...")
     raw = read_csv(raw_dir / CSV_NAME)
     titles = clean_titles(raw)

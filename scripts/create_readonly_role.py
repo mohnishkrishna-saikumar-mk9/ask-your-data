@@ -12,6 +12,7 @@ from src.db import get_engine, run_sql_file
 
 
 def main() -> None:
+    """Create or refresh the read-only role using READONLY_PASSWORD."""
     password = os.getenv("READONLY_PASSWORD", "")
     if len(password) < 12:
         raise SystemExit("Set READONLY_PASSWORD (12+ characters) in .env first.")

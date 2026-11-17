@@ -28,6 +28,7 @@ def latest_runs(expected: int | None = None) -> pd.DataFrame:
 def aggregate(df: pd.DataFrame, by: str) -> pd.DataFrame:
     """Accuracy, valid-SQL rate and latency per model x variant x `by` (plus an 'all' row)."""
     def stats(g: pd.DataFrame) -> pd.Series:
+        """Metrics for one group of benchmark rows."""
         return pd.Series({
             "n": len(g), "accuracy": g["correct"].mean(), "valid_sql": g["valid_sql"].mean(),
             "retries": int((g["attempts"] > 1).sum()),
@@ -75,6 +76,7 @@ def tables_markdown(summary: pd.DataFrame) -> str:
 
 
 def main() -> None:
+    """Write summary.csv, summary_difficulty.csv and summary.md from complete runs."""
     df = latest_runs()
     if df.empty:
         print("No complete result CSVs found in eval/results. Run eval.run_eval first.")

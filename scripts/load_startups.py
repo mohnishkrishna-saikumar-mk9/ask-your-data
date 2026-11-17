@@ -161,6 +161,7 @@ def split_investors(rounds: pd.DataFrame) -> pd.DataFrame:
 
 
 def main(raw_dir: Path = RAW_DIR / "startups") -> None:
+    """Read, clean and load funding rounds and their investors."""
     print("Loading startups ...")
     raw = read_csv(raw_dir / CSV_NAME)
     rounds = clean_rounds(raw)

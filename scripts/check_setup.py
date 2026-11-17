@@ -7,6 +7,7 @@ from src.db import get_engine, run_query, run_sql_file
 
 
 def main() -> None:
+    """Check the connection, then create and verify all dataset schemas."""
     version = run_query("SELECT version() AS v")["v"][0]
     print(f"[OK] Connected to: {version.split(',')[0]}")
 

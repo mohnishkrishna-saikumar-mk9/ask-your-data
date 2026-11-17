@@ -12,6 +12,7 @@ TARGET_MS = 500
 
 
 def main() -> None:
+    """Time every analysis query and report the ones over the target."""
     slow = 0
     for dataset in DATASETS:
         for q in list_queries(dataset):

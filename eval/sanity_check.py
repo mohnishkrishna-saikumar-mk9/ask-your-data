@@ -20,6 +20,7 @@ def _question_from(messages: list[dict]) -> str:
 def run_check(answers: dict[str, str], label: str, questions: list[dict]) -> list[str]:
     """Score a fake model that returns `answers[question]`; return ids marked correct."""
     def fake(messages: list[dict], model: str) -> tuple[str, float]:
+        """Answer with the scripted SQL for this question."""
         return f"```sql\n{answers[_question_from(messages)]}\n```", 0.0
 
     rows = [evaluate_one(q, f"check:{label}", "full", llm=fake) for q in questions]
@@ -27,6 +28,7 @@ def run_check(answers: dict[str, str], label: str, questions: list[dict]) -> lis
 
 
 def main() -> None:
+    """Run the perfect-model and negative-control checks; fail loudly if either is off."""
     questions = load_questions()
     perfect = {q["question"]: q["gold_sql"] for q in questions}
     wrong: dict[str, str] = {}

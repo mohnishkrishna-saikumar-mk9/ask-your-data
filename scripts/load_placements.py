@@ -47,6 +47,7 @@ def clean_students(raw: pd.DataFrame) -> pd.DataFrame:
 
 
 def main(raw_dir: Path = RAW_DIR / "placements") -> None:
+    """Read, clean and load the student table."""
     print("Loading placements ...")
     students = clean_students(read_csv(raw_dir / CSV_NAME))
     null_report(students, "students")

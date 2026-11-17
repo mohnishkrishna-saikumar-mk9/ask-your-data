@@ -18,10 +18,12 @@ from src.llm.prompts import VARIANTS
 
 
 def is_complete(model: str, variant: str, total: int) -> bool:
+    """True if the saved run for this model + variant has every question answered."""
     return len(load_progress(run_file(model, variant))) >= total
 
 
 def main() -> None:
+    """Run every model x prompt variant (resuming), then rebuild the summary."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--sleep", type=float, default=0.0)
     parser.add_argument("--models", nargs="+", default=EVAL_MODELS)

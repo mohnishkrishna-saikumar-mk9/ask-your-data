@@ -108,6 +108,7 @@ def sanity_checks() -> None:
 
 
 def main(raw_dir: Path = RAW_DIR / "ipl") -> None:
+    """Read, clean and load matches + deliveries, then print sanity checks."""
     print("Loading IPL ...")
     raw_matches = read_csv(raw_dir / "matches.csv")
     raw_deliveries = read_csv(raw_dir / "deliveries.csv")

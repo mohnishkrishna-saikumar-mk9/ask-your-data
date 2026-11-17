@@ -29,6 +29,7 @@ def clean_daily(raw: pd.DataFrame, key_col: str, key_name: str) -> pd.DataFrame:
 
 
 def main(raw_dir: Path = RAW_DIR / "air_quality") -> None:
+    """Read, clean and load the three air-quality files."""
     print("Loading air quality ...")
     raw_stations = read_csv(raw_dir / "stations.csv")
     raw_city = read_csv(raw_dir / "city_day.csv")

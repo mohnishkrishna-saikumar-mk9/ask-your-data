@@ -30,6 +30,7 @@ LOADERS: dict[str, ModuleType] = {
 
 
 def main() -> None:
+    """Run every loader in order; skip datasets whose files are missing."""
     for name, loader in LOADERS.items():
         start = time.perf_counter()
         try:

@@ -32,6 +32,7 @@ def prepare_script(text: str) -> str:
 
 
 def main(raw_dir: Path = RAW_DIR / "chinook") -> None:
+    """Run the vendor SQL script inside schema chinook, then add comments."""
     print("Loading Chinook ...")
     path = raw_dir / SCRIPT_NAME
     if not path.exists():

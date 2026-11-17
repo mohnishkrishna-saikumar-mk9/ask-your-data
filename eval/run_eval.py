@@ -103,6 +103,7 @@ class DailyQuotaExhausted(RuntimeError):
 
 
 def is_daily_quota(row: dict) -> bool:
+    """The provider's per-day limit is used up (waiting minutes will not help)."""
     text = row["error"].lower()
     return row["llm_error"] and any(s in text for s in ("per day", "tpd", "rpd", "daily"))
 
@@ -175,6 +176,7 @@ def run(model: str, variant: str, dataset: str | None = None, limit: int | None 
 
 
 def main() -> None:
+    """Command line: evaluate one model + prompt variant."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", required=True, help="provider:model_id")
     parser.add_argument("--prompt", default="full", choices=VARIANTS)
