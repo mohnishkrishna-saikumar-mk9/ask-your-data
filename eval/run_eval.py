@@ -98,37 +98,79 @@ def is_rate_limited(row: dict) -> bool:
     return row["llm_error"] and any(s in text for s in ("429", "rate limit", "rate_limit", "too many"))
 
 
+class DailyQuotaExhausted(RuntimeError):
+    """The provider's per-day limit is used up; waiting minutes will not help."""
+
+
+def is_daily_quota(row: dict) -> bool:
+    text = row["error"].lower()
+    return row["llm_error"] and any(s in text for s in ("per day", "tpd", "rpd", "daily"))
+
+
 def evaluate_with_retry(q: dict, model: str, variant: str) -> dict:
-    """evaluate_one, waiting and retrying when the provider rate-limits us."""
+    """evaluate_one, waiting and retrying when the provider rate-limits us per minute.
+    A daily limit raises DailyQuotaExhausted instead, so the caller can stop this run."""
     row = evaluate_one(q, model, variant)
     for wait in RATE_LIMIT_WAITS:
+        if is_daily_quota(row):
+            raise DailyQuotaExhausted(row["error"][:200])
         if not is_rate_limited(row):
             break
         print(f"      rate limited - waiting {wait}s and retrying {q['id']}")
         time.sleep(wait)
         row = evaluate_one(q, model, variant)
+    if is_daily_quota(row):
+        raise DailyQuotaExhausted(row["error"][:200])
     return row
 
 
+def run_file(model: str, variant: str) -> Path | None:
+    """The newest saved CSV for this model + variant, if any."""
+    safe_model = re.sub(r"[^A-Za-z0-9.-]+", "-", model)
+    files = sorted(RESULTS_DIR.glob(f"2*_{safe_model}_{variant}.csv"))
+    return files[-1] if files else None
+
+
+def load_progress(path: Path | None) -> list[dict]:
+    """Rows already answered in a saved run, minus rate-limited ones (those are redone)."""
+    if path is None or not path.exists():
+        return []
+    df = pd.read_csv(path, dtype={"error": str}, keep_default_na=False)  # empty error = ""
+    return [r for r in df.to_dict("records") if not is_rate_limited(r)]
+
+
 def run(model: str, variant: str, dataset: str | None = None, limit: int | None = None,
-        sleep: float = 0.0) -> Path:
-    """Evaluate one model + prompt variant. The CSV is saved after every question, so an
-    interrupted run keeps its progress (summarize ignores incomplete runs)."""
+        sleep: float = 0.0, resume: bool = False) -> Path:
+    """Evaluate one model + prompt variant. The CSV is saved after every question.
+
+    resume=True continues the newest saved run for this model + variant in the same file:
+    answered questions are kept, rate-limited ones are asked again. A daily-quota error stops
+    the run (raising DailyQuotaExhausted); run it again later with resume to finish it.
+    """
     questions = load_questions(dataset)[:limit]
     RESULTS_DIR.mkdir(exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    safe_model = re.sub(r"[^A-Za-z0-9.-]+", "-", model)
-    out = RESULTS_DIR / f"{stamp}_{safe_model}_{variant}.csv"
-    rows = []
-    for i, q in enumerate(questions, 1):
+    previous = run_file(model, variant) if resume else None
+    if previous:
+        out = previous
+    else:
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out = RESULTS_DIR / f"{stamp}_{re.sub(r'[^A-Za-z0-9.-]+', '-', model)}_{variant}.csv"
+    rows = load_progress(previous)
+    done = {r["id"] for r in rows}
+    todo = [q for q in questions if q["id"] not in done]
+    if previous:
+        print(f"Resuming {out.name}: {len(done)} answered, {len(todo)} to go")
+    for q in todo:
         row = evaluate_with_retry(q, model, variant)
         rows.append(row)
         pd.DataFrame(rows).to_csv(out, index=False)
         mark = "OK " if row["correct"] else ("ERR" if row["llm_error"] else "BAD")
-        print(f"[{i:3}/{len(questions)}] {mark} {q['id']} {row['latency_ms']:6} ms  {row['error'][:60]}")
+        print(f"[{len(rows):3}/{len(questions)}] {mark} {q['id']} {row['latency_ms']:6} ms  "
+              f"{row['error'][:60]}")
         time.sleep(sleep)
-    print_summary(pd.DataFrame(rows))
-    print(f"Saved {out.relative_to(EVAL_DIR.parent)}")
+    if rows:
+        print_summary(pd.DataFrame(rows))
+    print(f"Saved {out}")
     return out
 
 
@@ -140,8 +182,13 @@ def main() -> None:
     parser.add_argument("--limit", type=int, help="only the first N questions (smoke test)")
     parser.add_argument("--sleep", type=float, default=0.0,
                         help="seconds to wait between questions (free-tier rate limits)")
+    parser.add_argument("--resume", action="store_true",
+                        help="continue the newest saved run for this model + prompt")
     args = parser.parse_args()
-    run(args.model, args.prompt, args.dataset, args.limit, args.sleep)
+    try:
+        run(args.model, args.prompt, args.dataset, args.limit, args.sleep, args.resume)
+    except DailyQuotaExhausted as err:
+        raise SystemExit(f"Stopped: daily quota used up ({err}). Rerun later with --resume.") from err
 
 
 if __name__ == "__main__":
