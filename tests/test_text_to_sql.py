@@ -26,6 +26,8 @@ def fake_llm(*replies: str):
 def test_parse_model() -> None:
     provider, model_id = parse_model("openrouter:qwen/qwen-2.5:free")
     assert provider.name == "openrouter" and model_id == "qwen/qwen-2.5:free"
+    provider, model_id = parse_model("omniroute:auto/coding:fast")  # only the first ':' splits
+    assert provider.name == "omniroute" and model_id == "auto/coding:fast"
     with pytest.raises(ValueError):
         parse_model("no-colon")
     with pytest.raises(ValueError):

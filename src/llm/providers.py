@@ -21,6 +21,10 @@ PROVIDERS: dict[str, Provider] = {
                        "GEMINI_API_KEY"),
     "openrouter": Provider("openrouter", "https://openrouter.ai/api/v1", "OPENROUTER_API_KEY"),
     "ollama": Provider("ollama", os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"), None),
+    # OmniRoute: a self-hosted OpenAI-compatible gateway that routes to many upstream models.
+    "omniroute": Provider("omniroute",
+                          os.getenv("OMNIROUTE_BASE_URL", "http://localhost:20128/v1"),
+                          "OMNIROUTE_API_KEY"),
 }
 
 
