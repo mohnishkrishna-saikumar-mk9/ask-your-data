@@ -542,11 +542,15 @@ cache lookup → build prompt → LLM → extract SQL → guardrails → run →
 
 Each phase ends with: tests passing, `docs/LEARNING_NOTES.md` updated, a short summary to the user, and a suggested git commit message.
 
+> **Scope freeze (2026-11-17, agreed with the owner):** finish Phases 6 and 7, then stop. No UI rewrite
+> (Node.js was considered and rejected: measured answer time is ~4 s, of which the database is 0.05 s and
+> Streamlit a fraction of a second - the wait is the LLM). No new datasets or features. Phase 8 is optional.
+
 ### Phase 0 — Setup ✅ (partly done)
 - [x] Skeleton: `src/config.py`, `src/db.py`, `scripts/check_setup.py`, `.gitignore`, `.env.example`, `requirements.txt`
 - [x] Add `pyyaml`, `ruff` to requirements; add `pyproject.toml` with ruff + pytest config
-- [ ] Verify `python -m scripts.check_setup` passes on the user's machine (passes on a local PostgreSQL 16.2 test server; still to run with the owner's own `.env`)
-- [ ] `git init` (done), first commit (waiting for the owner)
+- [x] Verify `python -m scripts.check_setup` passes on the user's machine (owner's PostgreSQL 16.16, 2026-11-17)
+- [x] `git init`, first commit
 
 ### Phase 1 — Data loading (all 8 datasets)
 - [x] Profile raw IPL CSVs (headers, dtypes, nulls, samples); adjust Section 7.1 if needed (matched 7.1; innings 3-6 are super overs)
@@ -560,7 +564,7 @@ Each phase ends with: tests passing, `docs/LEARNING_NOTES.md` updated, a short s
 
 ### Phase 2 — SQL analysis
 - [x] 72 queries (Section 8: IPL 20, e-commerce 10, placements 10, olist 8, startups 6, air quality 6, netflix 6, chinook 6), each with header comment
-- [ ] Each runs < 500 ms (add indexes/views if not) — 66/72 pass on the slow local test server (median 10 ms; 5 e-commerce queries rewritten to aggregate before joining, 2-3.5x faster). The other 6 are full scans of 100K-260K rows near that server's ~750 ms floor for a bare count; re-measure with `python -m scripts.time_queries` on a normal PostgreSQL install
+- [ ] Each runs < 500 ms (add indexes/views if not) — measured on the owner's PostgreSQL 16.16: median 22 ms, 59/72 under 500 ms. Rewrites verified identical: 5 e-commerce queries (2-3.5x faster) and olist/02 (1.8 s -> 0.35 s). Remaining: 5 IPL view queries (~600 ms, fix after the benchmark), olist/01 and /08, a few e-commerce joins
 - [x] `knowledge/<dataset>/glossary.yaml` (all 8)
 
 ### Phase 3 — Streamlit dashboards
@@ -575,18 +579,21 @@ Each phase ends with: tests passing, `docs/LEARNING_NOTES.md` updated, a short s
 ### Phase 5 — Evaluation
 - [x] 160 questions with gold SQL (20 × 8 datasets, 6 easy / 9 medium / 5 hard each); test that all gold SQL runs (+ passes guardrails; perfect model 160/160, negative control 0/160 on real data)
 - [x] Results table per dataset + chart of accuracy vs number of tables (summary.md + Evaluation page)
-- [ ] `compare.py`, `run_eval.py`; run 3 models × 3 variants — code done and dry-run tested; the real runs need API keys in `.env`
+- [ ] `compare.py`, `run_eval.py`; run 3 models × 3 variants — in progress via OmniRoute (qwen3.8-27b, gemini-flash-lite, allam-2-7b). Groq's free tier allows 200K tokens/day per model, so `python -m eval.run_all` is run once a day and resumes
 - [ ] `summary.md` + Evaluation page; findings into README
 
 ### Phase 6 — Quality & CI
-- [ ] ruff clean; CI workflow green; `create_readonly_role.sql`
+- [x] ruff clean; `create_readonly_role.sql` (all 8 schemas, tested as the reader role)
+- [x] CI reproduced locally: clean checkout + fresh venv from requirements.txt + empty database, no `.env` -> ruff, check_setup, 858 tests green. The first GitHub Actions run (Linux) happens at the first push (Phase 7)
+- [x] Code audit: every function has type hints and a docstring, none over 50 lines (`answer_question` split into its pipeline steps); requirements pinned to tested minimums
+- [ ] After the benchmark finishes: make `ipl.batting_innings` / `bowling_innings` materialized (5 IPL library queries ~600 ms) without changing the schema text the LLM sees
 
 ### Phase 7 — Deploy & polish
 - [ ] Neon + Streamlit Cloud deployment
 - [ ] README: live link, GIF/screenshots, architecture, results table, setup, data sources, "what I learned"
 - [ ] Resume bullets (Section 15) filled with real numbers
 
-### Phase 8 — Bring your own data (makes it useful to other developers)
+### Phase 8 — Bring your own data (OPTIONAL - only after Phase 7, if time allows)
 - [ ] `src/sources/`: `Source` interface (name, dialect, engine, read-only check, schema introspection); implementations `SqlAlchemySource` (postgres/mysql/sqlite/duckdb) and `FileSource` (CSV/Excel/Parquet → DuckDB)
 - [ ] Refactor the 8 built-in datasets to be `Source`s (no special cases left in `src/`)
 - [ ] Dialect-aware prompts + guardrails (`sqlglot` read/transpile with the source's dialect)

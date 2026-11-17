@@ -348,3 +348,48 @@ work — and proved they work — on all 8:
 3. **What is data leakage in an LLM benchmark, and how did you prevent it?**
    If a test question also appears in the prompt's examples, the model can copy the answer, inflating the
    score. The few-shot files and the benchmark are kept separate and a test enforces it.
+
+---
+
+## Phase 6 — Quality & CI
+
+### What was built
+- **CI reproduced locally before the first push.** A clean checkout of the latest commit, a brand-new
+  virtual environment installed only from `requirements.txt`, an empty throwaway database and no `.env` —
+  then exactly the CI steps (`ruff check .`, `python -m scripts.check_setup`, `pytest`). All green.
+- **requirements.txt** now states the versions actually tested, with an upper limit for sqlglot.
+- **Code audit** against the project's own rules: type hints and a docstring on every function, nothing
+  over 50 lines. `answer_question` was split into its pipeline steps.
+- **Benchmark runner made robust for free tiers:** saves after every question, resumes where it stopped,
+  retries per-minute rate limits, and stops on a daily quota instead of recording errors as wrong answers.
+- **Slow queries measured on a real install** and two more rewritten (same results, proven by the comparator).
+- **Scope frozen** (recorded in SPEC 14): finish Phases 6 and 7; no UI rewrite; Phase 8 optional.
+
+### Key concepts
+- **Why reproduce CI locally?** The usual first-push failures are a dependency that exists on your laptop
+  but not in `requirements.txt`, or a test that quietly needs a local file (`.env`, raw data). A clean
+  checkout + fresh venv + empty database catches both. Remaining risk: GitHub runs Linux, this was Windows.
+- **Version ranges.** A minimum version says "tested with at least this"; an upper bound protects code that
+  depends on internals. The guardrails inspect sqlglot's syntax-tree classes, so a new major version must be
+  re-tested before it can weaken a security check.
+- **Measure before optimising, and verify after.** The window-function rewrite of the cohort query *looked*
+  cleverer but was slower (1.6 s -> 2.0 s), so it was not used. Every kept rewrite was checked to return the
+  identical result.
+- **Don't change what you are measuring mid-experiment.** Materialising the IPL views would speed up queries but
+  change the schema the LLM sees — so it waits until all benchmark runs are done.
+- **Free-tier engineering.** Groq allows 200K tokens per model per day; one full run of a model uses more. The
+  runner treats quota errors as "come back later", not as wrong answers, so the published accuracy is fair.
+- **Is Streamlit the bottleneck?** Measured: a 4.2 s answer = 2.7 s LLM + 0.05 s database + fallback overhead.
+  Rewriting the UI in another framework would not make answers faster.
+
+### Interview questions
+1. **How do you make sure CI will pass before you push?**
+   Recreate CI's conditions: clean checkout, fresh environment from the requirements file only, an empty
+   database, no local secrets, then run the same commands. It found nothing this time, which is the point —
+   it proves the repo doesn't depend on my laptop.
+2. **How did you handle API rate limits in a long benchmark?**
+   Per-minute limits: wait and retry. Daily limits: stop that run, save progress, resume the next day in the
+   same file. Errors are recorded separately from wrong answers so accuracy isn't distorted.
+3. **Your app feels slow. How do you decide what to optimise?**
+   Measure where the time goes first. Here the LLM call dominated; the database was 1% of the time. So the
+   useful fixes are a faster model, streaming, or caching repeated questions — not rewriting the frontend.
