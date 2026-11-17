@@ -37,6 +37,7 @@ class Answer:
 
     @property
     def ok(self) -> bool:
+        """True when the question was answered without any error."""
         return self.error is None
 
 
@@ -65,57 +66,76 @@ def _execute(sql: str, dataset: str, answer: Answer, dialect: str) -> pd.DataFra
     return df
 
 
+def _models_to_try(model: str, fallback: bool) -> list[str]:
+    """The chosen model first, then the fallback model if there is a different one."""
+    use_fallback = fallback and LLM_FALLBACK_MODEL and model != LLM_FALLBACK_MODEL
+    return [model, LLM_FALLBACK_MODEL] if use_fallback else [model]
+
+
+def _answer_from_cache(hit: dict, answer: Answer, dialect: str) -> bool:
+    """Re-run a cached SQL answer. False if the entry no longer works (then answer fresh)."""
+    answer.cached, answer.model = True, hit["model"]
+    try:
+        answer.df = _execute(hit["sql"], answer.dataset, answer, dialect)
+        return True
+    except Exception:  # stale cache entry
+        answer.cached, answer.sql = False, ""
+        return False
+
+
+def _run_with_one_retry(sql: str, messages: Messages, answer: Answer, llm: CompleteFn,
+                        dialect: str) -> None:
+    """Run the SQL. On a database error, send the error back to the model once (FR-12).
+    Unsafe SQL is never retried. Fills answer.df, or answer.error + error_kind."""
+    for attempt in (1, 2):
+        answer.attempts = attempt
+        try:
+            answer.df = _execute(sql, answer.dataset, answer, dialect)
+            answer.error = answer.error_kind = None
+            return
+        except GuardrailError as err:
+            answer.sql, answer.error, answer.error_kind = sql, str(err), "guardrail"
+            return
+        except Exception as err:
+            answer.sql, answer.error, answer.error_kind = sql, str(err).splitlines()[0], "db"
+            if attempt == 2:
+                return
+            try:
+                retry = build_retry_messages(messages, sql, answer.error)
+                sql = extract_sql(_ask_llm(retry, [answer.model], llm, answer))
+            except Exception as llm_err:
+                answer.error, answer.error_kind = str(llm_err), "llm"
+                return
+
+
 def answer_question(question: str, dataset: str, model: str | None = None,
                     variant: str = "full", llm: CompleteFn = complete,
                     use_cache: bool = True, fallback: bool = True,
                     dialect: str = SQL_DIALECT) -> Answer:
-    """Answer a natural-language question about `dataset`. Never raises; errors go in Answer."""
+    """Answer a natural-language question about `dataset`. Never raises; errors go in Answer.
+
+    Steps: cache -> prompt -> LLM (with fallback model) -> extract SQL -> guardrails ->
+    read-only run (one self-correction on a DB error) -> auto-chart -> cache.
+    """
     model = model or LLM_DEFAULT_MODEL
-    models = [model] + ([LLM_FALLBACK_MODEL] if fallback and LLM_FALLBACK_MODEL
-                        and model != LLM_FALLBACK_MODEL else [])
     answer = Answer(question=question, dataset=dataset, model=model)
     key = cache.cache_key(dataset, question, model, variant, dialect)
 
     hit = cache.get(key) if use_cache else None
-    if hit:
-        answer.cached, answer.model = True, hit["model"]
-        try:
-            answer.df = _execute(hit["sql"], dataset, answer, dialect)
-            answer.chart = pick_chart(answer.df)
-            return answer
-        except Exception:  # stale cache entry -> answer fresh
-            answer.cached, answer.sql = False, ""
+    if hit and _answer_from_cache(hit, answer, dialect):
+        answer.chart = pick_chart(answer.df)
+        return answer
 
     try:
         messages = build_messages(question, dataset, get_schema_context(dataset), variant, dialect)
-        sql = extract_sql(_ask_llm(messages, models, llm, answer))
+        sql = extract_sql(_ask_llm(messages, _models_to_try(model, fallback), llm, answer))
     except Exception as err:
         answer.error, answer.error_kind = str(err), "llm"
         return answer
 
-    for attempt in (1, 2):
-        answer.attempts = attempt
-        try:
-            answer.df = _execute(sql, dataset, answer, dialect)
-            answer.error = answer.error_kind = None
-            break
-        except GuardrailError as err:
-            answer.sql = sql
-            answer.error, answer.error_kind = str(err), "guardrail"
-            return answer  # unsafe SQL is never retried
-        except Exception as err:
-            answer.sql = sql
-            answer.error, answer.error_kind = str(err).splitlines()[0], "db"
-            if attempt == 2:
-                return answer
-            retry = build_retry_messages(messages, sql, answer.error)
-            try:
-                sql = extract_sql(_ask_llm(retry, [answer.model], llm, answer))
-            except Exception as llm_err:
-                answer.error, answer.error_kind = str(llm_err), "llm"
-                return answer
-
-    answer.chart = pick_chart(answer.df)
-    if use_cache:
-        cache.put(key, {"sql": answer.sql, "model": answer.model})
+    _run_with_one_retry(sql, messages, answer, llm, dialect)
+    if answer.ok:
+        answer.chart = pick_chart(answer.df)
+        if use_cache:
+            cache.put(key, {"sql": answer.sql, "model": answer.model})
     return answer
