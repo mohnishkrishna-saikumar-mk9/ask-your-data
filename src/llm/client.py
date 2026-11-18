@@ -22,6 +22,20 @@ def _client_for(provider_name: str, base_url: str, key: str) -> OpenAI:
     return _clients[provider_name]
 
 
+def reply_text(content: object) -> str:
+    """The reply as one string. Most providers send a string; some (e.g. Gemini) can send a
+    list of parts like [{"type": "text", "text": "..."}]."""
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = [p.get("text", "") if isinstance(p, dict) else getattr(p, "text", str(p))
+                 for p in content]
+        return "".join(part for part in parts if part)
+    return str(content)
+
+
 def complete(messages: Messages, model: str) -> tuple[str, float]:
     """Send chat messages to `model` ("provider:model_id"); return (reply text, latency ms)."""
     provider, model_id = parse_model(model)
@@ -29,4 +43,4 @@ def complete(messages: Messages, model: str) -> tuple[str, float]:
     start = time.perf_counter()
     response = client.chat.completions.create(model=model_id, messages=messages, temperature=0)
     latency_ms = (time.perf_counter() - start) * 1000
-    return response.choices[0].message.content or "", latency_ms
+    return reply_text(response.choices[0].message.content), latency_ms

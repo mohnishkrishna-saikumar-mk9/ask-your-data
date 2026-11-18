@@ -43,3 +43,13 @@ def test_retry_messages_include_error() -> None:
     msgs = build_retry_messages([{"role": "user", "content": "q"}], "SELECT x", "column x missing")
     assert msgs[-1]["role"] == "user" and "column x missing" in msgs[-1]["content"]
     assert msgs[-2]["role"] == "assistant"
+
+
+def test_reply_text_accepts_list_of_parts() -> None:
+    """Gemini can return the answer as a list of text parts instead of one string."""
+    from src.llm.client import reply_text
+
+    parts = [{"type": "text", "text": "```sql\nSELECT 1"}, {"type": "text", "text": "\n```"}]
+    assert reply_text(parts) == "```sql\nSELECT 1\n```"
+    assert extract_sql(reply_text(parts)) == "SELECT 1"
+    assert reply_text(None) == "" and reply_text("SELECT 2") == "SELECT 2"
