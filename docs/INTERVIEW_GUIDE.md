@@ -1,0 +1,75 @@
+# Interview guide — Ask Your Data
+
+One page to explain the project simply. Deeper detail for each part: [LEARNING_NOTES.md](LEARNING_NOTES.md).
+
+## The 30-second pitch
+
+> "I built an app where you ask a question in plain English and get the answer from a SQL database.
+> An LLM writes the SQL from the database's own column descriptions, a safety layer checks that the SQL
+> is read-only before it runs, and the result is shown as a table and a chart. I tested it on 8 real
+> datasets with a 160-question benchmark I wrote, and measured how accuracy changes with the size of the
+> database and with what I put in the prompt."
+
+## How it works — 5 steps
+
+1. **Question** — the user picks a dataset and types a question.
+2. **Prompt** — built from the database itself: table and column descriptions (`COMMENT ON`), plus a short
+   glossary of business definitions and a few example question → SQL pairs.
+3. **LLM** — writes one SQL query (any OpenAI-compatible provider; I used Groq and Gemini).
+4. **Safety check** — the SQL is parsed into a syntax tree (sqlglot): it must be a single `SELECT`, only on
+   the chosen dataset, with no write commands anywhere. It then runs read-only, with a 10 s timeout and a
+   row limit. If the database returns an error, the error goes back to the model once to fix it.
+5. **Answer** — a results table and an automatically chosen chart, plus the SQL so the user can check it.
+
+## Numbers you can say
+
+| | |
+|---|---|
+| Datasets | 8 real datasets, from 1 table to 11 tables (IPL 260K deliveries, Olist 99K orders, ...) |
+| Hand-written SQL | 72 analysis queries: joins, CTEs, window functions, recursive CTE, cohorts |
+| Benchmark | 160 questions with gold SQL, 20 per dataset, easy / medium / hard |
+| Result so far | qwen3.8-27b, schema only: **78%** execution accuracy (125/160) |
+| Tests | 860+ automated tests; the LLM is always mocked in tests |
+
+## Key decisions — and why
+
+- **One PostgreSQL schema per dataset** — the model only ever sees the schema it is asked about.
+- **Column comments are the data dictionary** — improving a comment improves answers without code changes.
+- **Safety in layers, not one check** — syntax-tree check, read-only transaction, read-only database user,
+  timeout. If one layer has a bug, the others still protect the data.
+- **Execution accuracy** — compare result rows, not SQL text: many different queries are correct.
+- **OpenAI-compatible API** — switching provider is a config change (`provider:model` in `.env`).
+
+## Three stories that show judgement
+
+1. **Data cleaning found real problems in the source data.** Half of one sales file was the same sales
+   pasted twice in shifted columns — loading it would have doubled revenue. One startup's ₹390 crore was
+   recorded as US dollars (70x too big). I proved each issue before fixing it and logged every decision.
+2. **Safety: run exactly what you checked.** The query that runs is re-built from the checked syntax tree,
+   not the model's raw text, so the checker and the database can't read the text differently. I proved
+   this never changes an answer on 172 queries.
+3. **Making the benchmark fair.** A "perfect model" must score 100% and a deliberately wrong one ~0%. Real
+   model answers then showed my scorer marked some correct answers wrong (order or extra columns the
+   question never asked for) — I fixed the rules and re-scored. Provider errors (quota, network) are
+   never counted as wrong answers.
+
+## Likely questions — short answers
+
+- **How do you stop the LLM from deleting data?** Several layers: the syntax-tree check only allows one
+  `SELECT`; the database transaction is read-only; the app's database user can only read; plus a timeout.
+- **Why not just use LangChain?** The whole engine is six small files (~460 lines, the main flow ~140) that
+  I can explain line by line; a framework would hide the parts I wanted to learn and test.
+- **How do you know the answers are right?** The 160-question benchmark compares results with hand-written
+  gold SQL, and the benchmark itself is checked (perfect model 100%, wrong model 0%).
+- **What was hardest?** Messy real data, and making the evaluation fair — both needed checking assumptions
+  against the real data instead of trusting the first result.
+- **What would you improve?** Run the benchmark on more models (free API quotas limited me), and pick only
+  the relevant tables for very large databases.
+
+## 2-minute demo
+
+1. Ask page → IPL → "Which team has won the most IPL titles?" → open *Generated SQL* → show the chart.
+2. Open `tests/test_guardrails.py` → show attacks like `SELECT 1; DROP TABLE ...` and `pg_sleep(10)` that the
+   safety layer refuses (the model itself usually won't write them, so the tests are the reliable demo).
+3. Dashboard → switch dataset → move the season slider.
+4. Evaluation page → accuracy by dataset and by number of tables.

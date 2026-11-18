@@ -579,7 +579,7 @@ Each phase ends with: tests passing, `docs/LEARNING_NOTES.md` updated, a short s
 ### Phase 5 — Evaluation
 - [x] 160 questions with gold SQL (20 × 8 datasets, 6 easy / 9 medium / 5 hard each); test that all gold SQL runs (+ passes guardrails; perfect model 160/160, negative control 0/160 on real data)
 - [x] Results table per dataset + chart of accuracy vs number of tables (summary.md + Evaluation page)
-- [ ] `compare.py`, `run_eval.py`; run 3 models × 3 variants — in progress via OmniRoute (qwen3.8-27b, gemini-flash-lite, allam-2-7b). Groq's free tier allows 200K tokens/day per model, so `python -m eval.run_all` is run once a day and resumes
+- [ ] `compare.py`, `run_eval.py`; **simplified (owner's decision, 2026-11-18): 1 model × 3 prompt variants** (qwen3.8-27b via Groq) instead of 3 models - simpler to explain, and free-tier quotas plus a local gateway made the other models unreliable. The first 189 qwen answers went through the OmniRoute proxy to the same Groq model (relabelled). Gemini partial runs kept as an optional comparison
 - [ ] `summary.md` + Evaluation page; findings into README
 
 ### Phase 6 — Quality & CI
