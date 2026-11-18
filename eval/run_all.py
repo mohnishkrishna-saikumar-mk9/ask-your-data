@@ -12,7 +12,14 @@ import argparse
 import time
 
 from eval import summarize
-from eval.run_eval import DailyQuotaExhausted, load_progress, load_questions, run, run_file
+from eval.run_eval import (
+    DailyQuotaExhausted,
+    ProviderUnavailable,
+    load_progress,
+    load_questions,
+    run,
+    run_file,
+)
 from src.config import EVAL_MODELS
 from src.llm.prompts import VARIANTS
 
@@ -45,6 +52,9 @@ def main() -> None:
             run(model, variant, sleep=args.sleep, resume=True)
         except DailyQuotaExhausted as err:
             print(f"Daily quota used up - progress saved, resume tomorrow. ({err})")
+            waiting.append(f"{model} | {variant}")
+        except ProviderUnavailable as err:
+            print(f"Provider not answering (network/gateway?) - progress saved. ({err})")
             waiting.append(f"{model} | {variant}")
         except Exception as err:  # keep going: one broken run must not lose the others
             print(f"Run failed: {err}")

@@ -89,17 +89,26 @@ def print_summary(df: pd.DataFrame) -> None:
               .rename(columns={"mean": "accuracy"}).round(3).to_string(), "\n")
 
 
-RATE_LIMIT_WAITS = (30, 60, 120)  # seconds to wait before retrying a rate-limited question
+RATE_LIMIT_WAITS = (30, 60, 120)  # seconds to wait before retrying a provider failure
+
+# The provider never answered: quota, network or server trouble - not the model's mistake.
+TRANSIENT = ("429", "rate limit", "rate_limit", "too many", "connection error", "timed out",
+             "timeout", "502", "503", "504", "overloaded", "unavailable")
 
 
 def is_rate_limited(row: dict) -> bool:
-    """The provider refused for quota reasons - not the model's mistake, so retry it."""
+    """The provider did not answer for a temporary reason (quota, network, overload).
+    Such a question was not really attempted: retry it, and never score it as wrong."""
     text = row["error"].lower()
-    return row["llm_error"] and any(s in text for s in ("429", "rate limit", "rate_limit", "too many"))
+    return bool(row["llm_error"]) and any(s in text for s in TRANSIENT)
 
 
 class DailyQuotaExhausted(RuntimeError):
     """The provider's per-day limit is used up; waiting minutes will not help."""
+
+
+class ProviderUnavailable(RuntimeError):
+    """The provider kept failing (e.g. network or gateway down) even after the retries."""
 
 
 def is_daily_quota(row: dict) -> bool:
@@ -117,11 +126,13 @@ def evaluate_with_retry(q: dict, model: str, variant: str) -> dict:
             raise DailyQuotaExhausted(row["error"][:200])
         if not is_rate_limited(row):
             break
-        print(f"      rate limited - waiting {wait}s and retrying {q['id']}")
+        print(f"      provider did not answer - waiting {wait}s and retrying {q['id']}")
         time.sleep(wait)
         row = evaluate_one(q, model, variant)
     if is_daily_quota(row):
         raise DailyQuotaExhausted(row["error"][:200])
+    if is_rate_limited(row):  # still no answer after all retries: stop, don't record it
+        raise ProviderUnavailable(row["error"][:200])
     return row
 
 
@@ -133,7 +144,7 @@ def run_file(model: str, variant: str) -> Path | None:
 
 
 def load_progress(path: Path | None) -> list[dict]:
-    """Rows already answered in a saved run, minus rate-limited ones (those are redone)."""
+    """Rows already answered in a saved run, minus ones the provider never answered (redone)."""
     if path is None or not path.exists():
         return []
     df = pd.read_csv(path, dtype={"error": str}, keep_default_na=False)  # empty error = ""
@@ -145,8 +156,9 @@ def run(model: str, variant: str, dataset: str | None = None, limit: int | None 
     """Evaluate one model + prompt variant. The CSV is saved after every question.
 
     resume=True continues the newest saved run for this model + variant in the same file:
-    answered questions are kept, rate-limited ones are asked again. A daily-quota error stops
-    the run (raising DailyQuotaExhausted); run it again later with resume to finish it.
+    answered questions are kept, unanswered ones are asked again. A daily-quota error raises
+    DailyQuotaExhausted; a provider that keeps failing (network, gateway) raises
+    ProviderUnavailable. Either way progress is saved; run again later with resume.
     """
     questions = load_questions(dataset)[:limit]
     RESULTS_DIR.mkdir(exist_ok=True)
@@ -189,8 +201,8 @@ def main() -> None:
     args = parser.parse_args()
     try:
         run(args.model, args.prompt, args.dataset, args.limit, args.sleep, args.resume)
-    except DailyQuotaExhausted as err:
-        raise SystemExit(f"Stopped: daily quota used up ({err}). Rerun later with --resume.") from err
+    except (DailyQuotaExhausted, ProviderUnavailable) as err:
+        raise SystemExit(f"Stopped: provider not answering ({err}). Rerun later with --resume.") from err
 
 
 if __name__ == "__main__":

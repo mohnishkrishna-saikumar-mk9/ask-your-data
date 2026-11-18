@@ -76,3 +76,13 @@ def test_without_resume_a_new_file_is_started(runner: dict) -> None:
     pd.DataFrame([row(QUESTIONS[0])]).to_csv(path, index=False)
     out = run_eval.run("fake:m", "full")
     assert out != path and len(runner["calls"]) == 5
+
+
+def test_connection_errors_are_never_saved_as_answers(runner: dict) -> None:
+    """A gateway that goes down must stop the run, not fill it with wrong answers."""
+    runner["script"]["q3"] = ["All models failed. Last error: Connection error."] * 4
+    with pytest.raises(run_eval.ProviderUnavailable):
+        run_eval.run("fake:m", "full", resume=True)
+    saved = pd.read_csv(run_eval.run_file("fake:m", "full"))
+    assert saved["id"].tolist() == ["q1", "q2"]  # nothing recorded for q3
+    assert runner["calls"].count("q3") == 4      # first try + 3 retries
