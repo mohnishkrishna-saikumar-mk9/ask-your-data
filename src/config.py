@@ -40,3 +40,6 @@ LLM_DEFAULT_MODEL = os.getenv("LLM_DEFAULT_MODEL", "")
 LLM_FALLBACK_MODEL = os.getenv("LLM_FALLBACK_MODEL", "")
 EVAL_MODELS = [m.strip() for m in os.getenv("EVAL_MODELS", "").split(",") if m.strip()]
 LLM_TIMEOUT_S = float(os.getenv("LLM_TIMEOUT_S", "30"))
+
+# Public demo protection: max LLM questions per visitor session (0 = no limit, the local default).
+DEMO_MAX_QUESTIONS = int(os.getenv("DEMO_MAX_QUESTIONS", "0"))

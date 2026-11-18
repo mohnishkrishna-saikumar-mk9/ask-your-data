@@ -12,6 +12,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# On Streamlit Cloud, settings live in st.secrets; copy them into the environment before any
+# page imports `src` (which reads os.environ, exactly like .env locally).
+from app.secrets_env import secrets_to_env  # noqa: E402
+
+secrets_to_env()
+
 st.set_page_config(page_title="Ask Your Data", page_icon=":material/query_stats:", layout="wide")
 
 pages = [

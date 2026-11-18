@@ -2,7 +2,7 @@
 import streamlit as st
 
 from app.ui import dataset_picker, db_ready, show_result
-from src.config import EVAL_MODELS, LLM_DEFAULT_MODEL, LLM_FALLBACK_MODEL
+from src.config import DEMO_MAX_QUESTIONS, EVAL_MODELS, LLM_DEFAULT_MODEL, LLM_FALLBACK_MODEL
 from src.glossary import load_example_questions
 from src.llm.providers import available_models
 from src.text_to_sql import answer_question
@@ -38,6 +38,13 @@ if submitted or st.session_state.pop("_run_example", False):
     if not question.strip():
         st.warning("Type a question first.")
         st.stop()
+    asked = st.session_state.get("questions_asked", 0)
+    if DEMO_MAX_QUESTIONS and asked >= DEMO_MAX_QUESTIONS:
+        st.info(f"This public demo allows {DEMO_MAX_QUESTIONS} questions per visit, to keep the free "
+                "API quota available for everyone. Run it locally for unlimited questions.",
+                title="Question limit reached")
+        st.stop()
+    st.session_state["questions_asked"] = asked + 1
     with st.spinner("Writing SQL and running it..."):
         answer = answer_question(question, dataset, model)
 
