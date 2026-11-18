@@ -53,6 +53,35 @@ One page to explain the project simply. Deeper detail for each part: [LEARNING_N
    question never asked for) — I fixed the rules and re-scored. Provider errors (quota, network) are
    never counted as wrong answers.
 
+## AI system design vocabulary — mapped to this project
+
+Interviewers use these standard terms. Each one below is something this project actually does, so
+you can answer with your own code as the example.
+
+| Term | What it means | Where it is here |
+|---|---|---|
+| **Context engineering** | choosing what goes into the prompt | schema + `COMMENT ON` descriptions + glossary + examples, built from the database (`src/schema_context.py`, `src/llm/prompts.py`) |
+| **Guardrails / output validation** | never trust model output; check it before acting | sqlglot syntax-tree check (`src/guardrails.py`); the SQL that runs is re-built from the checked tree |
+| **Prompt injection defence** | a user or model tries to make the system do something unsafe | the checker refuses anything but one `SELECT`, whatever the prompt said; tested in `tests/test_guardrails.py` |
+| **Defence in depth** | several independent safety layers | syntax check + read-only transaction + read-only DB user + timeout + row cap (`src/db.py`) |
+| **Self-correction loop** | feed the error back so the model can fix it | one retry with the database error appended (`src/text_to_sql.py`) |
+| **Fallback model** | if one model fails, try another | `LLM_FALLBACK_MODEL`; models are tried in order (`_models_to_try`) |
+| **Timeouts** | never wait forever on a model or a query | LLM timeout `LLM_TIMEOUT_S`; database `statement_timeout` 10 s |
+| **Retries with backoff** | wait longer after each failure | benchmark runner waits 30 → 60 → 120 s on rate limits and outages (`eval/run_eval.py`) |
+| **Rate limits (TPM / per-day)** | providers cap tokens per minute and per day | daily-quota stop + resume next day; per-visitor question limit on the public demo (`DEMO_MAX_QUESTIONS`) |
+| **Graceful degradation** | fail clearly instead of producing wrong results | a provider outage stops the benchmark with progress saved, instead of recording errors as wrong answers |
+| **Caching** | don't pay twice for the same answer | exact-match cache of (dataset, question, model, prompt) → SQL, on disk (`src/cache.py`); rows are always re-queried, so data is fresh |
+| **Model routing / AI gateway** | one interface in front of many providers | `provider:model_id` in `.env`; every provider speaks the OpenAI API (`src/llm/providers.py`); works through the OmniRoute gateway |
+| **Evaluation pipeline** | measure quality with a fixed test set, not by feel | 160 questions, execution accuracy, perfect-model 100% and negative-control 0% checks (`eval/`) |
+| **Prompt variants / ablation** | change one thing in the prompt and measure the effect | 3 prompt styles: schema only, + examples, + examples and glossary |
+
+**What I would add at scale (say these as ideas, not as features):**
+- **Observability**: log every question, the SQL, latency, tokens and errors, with a dashboard of failures.
+- **Semantic cache**: reuse answers for questions that *mean* the same thing, not only identical text.
+- **Schema retrieval** for very large databases: pick only the relevant tables before building the prompt
+  (my largest database has 11 tables, which still fits in one prompt; real company databases can have hundreds).
+- **LLM-as-a-judge** for questions where the exact result is not the only correct answer.
+
 ## Likely questions — short answers
 
 - **How do you stop the LLM from deleting data?** Several layers: the syntax-tree check only allows one
