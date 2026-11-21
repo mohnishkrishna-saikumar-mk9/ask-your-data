@@ -1,0 +1,13 @@
+model,variant,difficulty,n,accuracy,valid_sql,retries,p50_ms,p95_ms
+groq:qwen/qwen3.8-27b,few_shot,easy,48.0,0.9583333333333334,1.0,0.0,9921.5,14601.6
+groq:qwen/qwen3.8-27b,few_shot,hard,40.0,0.65,1.0,2.0,10732.0,14473.899999999998
+groq:qwen/qwen3.8-27b,few_shot,medium,72.0,0.8472222222222222,1.0,1.0,9440.0,14302.000000000002
+groq:qwen/qwen3.8-27b,full,easy,48.0,0.9791666666666666,1.0,0.0,12571.0,17555.1
+groq:qwen/qwen3.8-27b,full,hard,40.0,0.675,0.975,1.0,11463.5,17844.2
+groq:qwen/qwen3.8-27b,full,medium,72.0,0.875,1.0,0.0,12500.0,17914.7
+groq:qwen/qwen3.8-27b,zero_shot,easy,48.0,0.9791666666666666,1.0,0.0,3089.0,10042.449999999999
+groq:qwen/qwen3.8-27b,zero_shot,hard,40.0,0.65,0.975,3.0,6392.0,18913.449999999997
+groq:qwen/qwen3.8-27b,zero_shot,medium,72.0,0.7222222222222222,1.0,0.0,5021.0,10543.15
+groq:qwen/qwen3.8-27b,few_shot,all,160.0,0.83125,1.0,3.0,9941.5,14636.549999999997
+groq:qwen/qwen3.8-27b,full,all,160.0,0.85625,0.99375,1.0,12065.5,17834.25
+groq:qwen/qwen3.8-27b,zero_shot,all,160.0,0.78125,0.99375,3.0,4919.5,10615.599999999991

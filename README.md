@@ -4,10 +4,18 @@ Ask a question in plain English about one of 8 real datasets and get back the SQ
 and a chart. An LLM writes the SQL from the database's own schema and data dictionary; AST-based
 guardrails check it; a read-only PostgreSQL connection runs it.
 
-**Live demo:** _coming soon (Phase 7)_ · **Benchmark results:** [below](#benchmark) · **Built with:**
-Python · PostgreSQL · SQLAlchemy · pandas · Streamlit · Plotly · sqlglot · OpenAI-compatible LLM APIs · pytest
+**Benchmark:** 86% execution accuracy on 160 questions ([details](#benchmark)) · **Runs locally**
+([setup](#run-it-locally-windows--powershell)) · **Built with:** Python · PostgreSQL · SQLAlchemy · pandas ·
+Streamlit · Plotly · sqlglot · OpenAI-compatible LLM APIs · pytest
 
-<!-- Screenshots: docs/screenshots/ (to be added with the live demo) -->
+![Ask page: question, generated SQL, chart](docs/screenshots/ask.jpg)
+
+| Dashboard | Evaluation |
+|---|---|
+| ![IPL dashboard](docs/screenshots/dashboard.jpg) | ![Evaluation page](docs/screenshots/evaluation.jpg) |
+
+In the Ask screenshot, qwen was selected but rate-limited, so the fallback model answered; the
+footer shows which model actually answered.
 
 ---
 
@@ -18,7 +26,7 @@ Python · PostgreSQL · SQLAlchemy · pandas · Streamlit · Plotly · sqlglot �
 | **Ask** | Type a question → generated SQL (shown), result table, auto-chosen chart, model name and LLM / DB time |
 | **Dashboard** | 4 KPI tiles + 4 charts per dataset, with season / year / month filters |
 | **Query library** | 72 hand-written, commented SQL queries (CTEs, window functions, recursive CTEs, cohorts) |
-| **Evaluation** | Execution accuracy of different LLMs and prompt styles on a 160-question benchmark |
+| **Evaluation** | Execution accuracy of 3 prompt styles on a 160-question benchmark, per dataset |
 
 ## The 8 datasets (1 table → 11 tables)
 
@@ -72,13 +80,36 @@ How the scoring was made fair, and how that is checked:
 - `python -m eval.sanity_check`: a perfect model must score **160/160** and a negative control
   (each question answered with another question's SQL) **0/160** — both hold on the real data.
 
-**Results:** _in progress_ — qwen3.8-27b (via Groq) with 3 prompt styles: schema only, + examples,
-+ examples and glossary. First result: **78%** execution accuracy with the schema only (125/160).
-The full table is added when all three runs are complete.
+**Results** — one model, `qwen/qwen3.8-27b` via Groq, with 3 prompt styles:
+
+| Prompt | What the prompt contains | Correct | Accuracy | Median latency |
+|---|---|---|---|---|
+| zero_shot | schema + `COMMENT`s | 125 / 160 | 78% | 4.9 s |
+| few_shot | + example question/SQL pairs | 133 / 160 | 83% | 9.9 s |
+| full | + examples + metric glossary | 137 / 160 | **86%** | 12.1 s |
+
+| Dataset (tables) | placements (1) | ipl (2) | startups (2) | air_quality (3) | ecommerce (5) | netflix (5) | olist (8) | chinook (11) |
+|---|---|---|---|---|---|---|---|---|
+| zero_shot | 75% | 65% | 85% | 90% | 75% | 80% | 85% | 70% |
+| full | 95% | 80% | 60% | 90% | 90% | 90% | 100% | 80% |
+
+What the numbers show:
+- **More context helps (+8 points)** but costs latency: the full prompt is ~2.5× slower than schema only.
+- **No clear drop as the schema grows**: the 8-table Olist dataset scored highest. The domain wording
+  With 20 questions per dataset, the differences between datasets are within noise.
+- **Startups got worse with context (85% → 60%)**. The examples and glossary teach "show amounts in
+  millions" and "ignore *Undisclosed Investors* placeholders"; the gold answers use raw dollars and keep
+  the placeholders. The SQL logic was right but the values differ, so execution accuracy marks it
+  wrong. Lesson: the prompt's conventions and the benchmark's conventions must agree.
+- In the full run, 159/160 answers were valid SQL; 1 was blocked by the guardrails and 1 needed the
+  self-correction retry.
+
+Free-tier limits: Groq allows a fixed number of tokens per day, so the runner saves after every
+question and resumes where it stopped (the full run was spread over several days of quota).
 
 ## Engineering
 
-- **861 tests** (`pytest`): cleaning rules on deliberately messy fixture data, every analysis query and
+- **863 tests** (`pytest`): cleaning rules on deliberately messy fixture data, every analysis query and
   gold query, guardrails (incl. injection attempts), the scorer, and every app page rendered with
   Streamlit's `AppTest`. LLM calls are always mocked.
 - **CI**: GitHub Actions with a PostgreSQL 16 service container runs `ruff` and the full test suite.

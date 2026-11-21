@@ -28,7 +28,8 @@ One page to explain the project simply. Deeper detail for each part: [LEARNING_N
 | Datasets | 8 real datasets, from 1 table to 11 tables (IPL 260K deliveries, Olist 99K orders, ...) |
 | Hand-written SQL | 72 analysis queries: joins, CTEs, window functions, recursive CTE, cohorts |
 | Benchmark | 160 questions with gold SQL, 20 per dataset, easy / medium / hard |
-| Result so far | qwen3.8-27b, schema only: **78%** execution accuracy (125/160) |
+| Result | qwen3.8-27b: **78%** schema only → **83%** + examples → **86%** + examples and glossary (137/160) |
+| Cost of context | the full prompt is ~2.5x slower (median 12.1 s vs 4.9 s) |
 | Tests | 860+ automated tests; the LLM is always mocked in tests |
 
 ## Key decisions — and why
@@ -40,7 +41,7 @@ One page to explain the project simply. Deeper detail for each part: [LEARNING_N
 - **Execution accuracy** — compare result rows, not SQL text: many different queries are correct.
 - **OpenAI-compatible API** — switching provider is a config change (`provider:model` in `.env`).
 
-## Three stories that show judgement
+## Four stories that show judgement
 
 1. **Data cleaning found real problems in the source data.** Half of one sales file was the same sales
    pasted twice in shifted columns — loading it would have doubled revenue. One startup's ₹390 crore was
@@ -52,6 +53,10 @@ One page to explain the project simply. Deeper detail for each part: [LEARNING_N
    model answers then showed my scorer marked some correct answers wrong (order or extra columns the
    question never asked for) — I fixed the rules and re-scored. Provider errors (quota, network) are
    never counted as wrong answers.
+4. **More context is not always better.** Examples and a glossary raised accuracy from 78% to 86% overall,
+   but the startups dataset fell from 85% to 60%. I compared the SQL: the examples taught "show amounts in
+   millions" and "skip placeholder investors", while the gold answers used raw dollars. The logic was
+   right but the values differed. The prompt and the benchmark must follow the same conventions.
 
 ## AI system design vocabulary — mapped to this project
 

@@ -1,0 +1,1813 @@
+id,dataset,n_tables,difficulty,model,variant,correct,valid_sql,guardrail_rejected,llm_error,attempts,llm_ms,db_ms,latency_ms,error,pred_sql
+air_001,air_quality,3,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14022,17,14040,,"SELECT
+  COUNT(DISTINCT city) AS num_cities
+FROM air_quality.city_daily
+LIMIT 1000"
+air_002,air_quality,3,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,775,4,779,,"SELECT
+  COUNT(*) AS total_stations
+FROM air_quality.stations
+LIMIT 1000"
+air_003,air_quality,3,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,338,7,345,,"SELECT
+  MAX(aqi) AS highest_aqi
+FROM air_quality.city_daily
+WHERE
+  city = 'Delhi' AND aqi IS NOT NULL
+LIMIT 1000"
+air_004,air_quality,3,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,401,5,405,,"SELECT
+  COUNT(*) AS good_days
+FROM air_quality.city_daily
+WHERE
+  city = 'Mumbai' AND aqi_bucket = 'Good'
+LIMIT 100"
+air_005,air_quality,3,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,306,5,311,,"SELECT
+  MIN(obs_date) AS earliest_date
+FROM air_quality.city_daily
+LIMIT 1000"
+air_006,air_quality,3,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,12488,5,12493,,"SELECT
+  COUNT(*) AS active_stations
+FROM air_quality.stations
+WHERE
+  status = 'Active'
+LIMIT 1000"
+air_007,air_quality,3,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14541,8,14550,,"SELECT
+  CAST(EXTRACT(YEAR FROM obs_date) AS INT) AS year,
+  ROUND(CAST(AVG(aqi) AS DECIMAL), 1) AS avg_aqi
+FROM air_quality.city_daily
+WHERE
+  city = 'Delhi'
+GROUP BY
+  1
+ORDER BY
+  1
+LIMIT 100"
+air_008,air_quality,3,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14548,11,14560,,"SELECT
+  city,
+  ROUND(CAST(AVG(pm25) AS DECIMAL), 1) AS avg_pm25
+FROM air_quality.city_daily
+WHERE
+  obs_date >= CAST('2019-01-01' AS DATE) AND obs_date < CAST('2020-01-01' AS DATE)
+GROUP BY
+  city
+ORDER BY
+  avg_pm25 DESC
+LIMIT 100"
+air_009,air_quality,3,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14484,7,14491,,"SELECT
+  city,
+  COUNT(*) AS stations
+FROM air_quality.stations
+WHERE
+  state = 'Maharashtra'
+GROUP BY
+  city
+ORDER BY
+  stations DESC,
+  city
+LIMIT 100"
+air_010,air_quality,3,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14675,26,14701,,"SELECT
+  CAST(EXTRACT(MONTH FROM obs_date) AS INT) AS month,
+  ROUND(CAST(AVG(aqi) AS DECIMAL), 1) AS avg_aqi
+FROM air_quality.city_daily
+WHERE
+  aqi IS NOT NULL
+GROUP BY
+  EXTRACT(MONTH FROM obs_date)
+ORDER BY
+  avg_aqi DESC
+LIMIT 1"
+air_011,air_quality,3,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14682,17,14699,,"SELECT
+  aqi_bucket,
+  COUNT(*) AS city_days
+FROM air_quality.city_daily
+WHERE
+  aqi_bucket IS NOT NULL
+GROUP BY
+  aqi_bucket
+ORDER BY
+  CASE aqi_bucket
+    WHEN 'Good'
+    THEN 1
+    WHEN 'Satisfactory'
+    THEN 2
+    WHEN 'Moderate'
+    THEN 3
+    WHEN 'Poor'
+    THEN 4
+    WHEN 'Very Poor'
+    THEN 5
+    WHEN 'Severe'
+    THEN 6
+    ELSE 7
+  END
+LIMIT 100"
+air_012,air_quality,3,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14318,6,14324,,"SELECT
+  city,
+  ROUND(CAST(AVG(no2) AS DECIMAL), 1) AS avg_no2
+FROM air_quality.city_daily
+WHERE
+  obs_date >= CAST('2020-01-01' AS DATE) AND obs_date < CAST('2021-01-01' AS DATE)
+GROUP BY
+  city
+ORDER BY
+  avg_no2 DESC
+LIMIT 5"
+air_013,air_quality,3,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,13517,12,13529,,"SELECT
+  city,
+  COUNT(*) AS severe_days
+FROM air_quality.city_daily
+WHERE
+  aqi_bucket = 'Severe'
+GROUP BY
+  city
+ORDER BY
+  severe_days DESC
+LIMIT 1"
+air_014,air_quality,3,medium,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,14870,68,14938,,"SELECT
+  s.station_name,
+  ROUND(CAST(AVG(d.aqi) AS DECIMAL), 1) AS avg_aqi
+FROM air_quality.station_daily AS d
+JOIN air_quality.stations AS s
+  ON s.station_id = d.station_id
+WHERE
+  s.city = 'Delhi'
+GROUP BY
+  s.station_name
+ORDER BY
+  avg_aqi DESC
+LIMIT 5"
+air_015,air_quality,3,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14494,17,14511,,"SELECT
+  city,
+  COUNT(pm25) AS days_with_pm25
+FROM air_quality.city_daily
+GROUP BY
+  city
+ORDER BY
+  days_with_pm25 DESC
+LIMIT 100"
+air_016,air_quality,3,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,14910,23,14933,,"SELECT
+  city,
+  ROUND(CAST(AVG(CASE WHEN EXTRACT(YEAR FROM obs_date) = 2018 THEN aqi END) AS DECIMAL), 1) AS avg_aqi_2018,
+  ROUND(CAST(AVG(CASE WHEN EXTRACT(YEAR FROM obs_date) = 2019 THEN aqi END) AS DECIMAL), 1) AS avg_aqi_2019,
+  ROUND(
+    CAST(AVG(CASE WHEN EXTRACT(YEAR FROM obs_date) = 2019 THEN aqi END) - AVG(CASE WHEN EXTRACT(YEAR FROM obs_date) = 2018 THEN aqi END) AS DECIMAL),
+    1
+  ) AS change
+FROM air_quality.city_daily
+WHERE
+  EXTRACT(YEAR FROM obs_date) IN (2018, 2019) AND aqi IS NOT NULL
+GROUP BY
+  city
+ORDER BY
+  city
+LIMIT 100"
+air_017,air_quality,3,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14066,8,14074,,"SELECT
+  city,
+  ROUND(avg_pm25_2019 - avg_pm25_2020, 1) AS drop_pm25
+FROM (
+  SELECT
+    city,
+    AVG(
+      CASE
+        WHEN obs_date BETWEEN CAST('2019-03-25' AS DATE) AND CAST('2019-05-31' AS DATE)
+        THEN pm25
+      END
+    ) AS avg_pm25_2019,
+    AVG(
+      CASE
+        WHEN obs_date BETWEEN CAST('2020-03-25' AS DATE) AND CAST('2020-05-31' AS DATE)
+        THEN pm25
+      END
+    ) AS avg_pm25_2020
+  FROM air_quality.city_daily
+  WHERE
+    (
+      obs_date BETWEEN CAST('2019-03-25' AS DATE) AND CAST('2019-05-31' AS DATE)
+    )
+    OR (
+      obs_date BETWEEN CAST('2020-03-25' AS DATE) AND CAST('2020-05-31' AS DATE)
+    )
+  GROUP BY
+    city
+) AS t
+WHERE
+  avg_pm25_2019 IS NOT NULL AND avg_pm25_2020 IS NOT NULL
+ORDER BY
+  drop_pm25 DESC
+LIMIT 1"
+air_018,air_quality,3,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14620,20,14640,,"SELECT
+  city,
+  ROUND(
+    CAST(100.0 * SUM(CASE WHEN aqi > 200 THEN 1 ELSE 0 END) / NULLIF(COUNT(aqi), 0) AS DECIMAL),
+    1
+  ) AS pct_poor_or_worse
+FROM air_quality.city_daily
+WHERE
+  aqi IS NOT NULL
+GROUP BY
+  city
+ORDER BY
+  pct_poor_or_worse DESC
+LIMIT 100"
+air_019,air_quality,3,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14726,5,14731,,"SELECT
+  obs_date,
+  aqi,
+  ROUND(
+    CAST(AVG(aqi) OVER (PARTITION BY city ORDER BY obs_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS DECIMAL),
+    1
+  ) AS rolling_avg_aqi
+FROM air_quality.city_daily
+WHERE
+  city = 'Mumbai'
+  AND obs_date >= CAST('2020-01-01' AS DATE)
+  AND obs_date < CAST('2020-02-01' AS DATE)
+ORDER BY
+  obs_date
+LIMIT 100"
+air_020,air_quality,3,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14610,30,14640,,"SELECT
+  s.state,
+  ROUND(CAST(AVG(d.pm25) AS DECIMAL), 1) AS avg_pm25
+FROM air_quality.station_daily AS d
+JOIN air_quality.stations AS s
+  ON s.station_id = d.station_id
+WHERE
+  d.obs_date >= CAST('2019-01-01' AS DATE)
+  AND d.obs_date < CAST('2020-01-01' AS DATE)
+GROUP BY
+  s.state
+ORDER BY
+  avg_pm25 DESC
+LIMIT 1"
+chk_001,chinook,11,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14416,4,14419,,"SELECT
+  COUNT(*) AS customers
+FROM chinook.customer
+LIMIT 1000"
+chk_002,chinook,11,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,15408,4,15412,,"SELECT
+  COUNT(*) AS track_count
+FROM chinook.track
+LIMIT 1000"
+chk_003,chinook,11,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,15447,5,15453,,"SELECT
+  COUNT(*) AS employee_count
+FROM chinook.employee
+LIMIT 1000"
+chk_004,chinook,11,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,15394,5,15400,,"SELECT
+  SUM(total) AS total_revenue
+FROM chinook.invoice
+LIMIT 1000"
+chk_005,chinook,11,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,15487,5,15491,,"SELECT
+  COUNT(*) AS playlists
+FROM chinook.playlist
+LIMIT 1000"
+chk_006,chinook,11,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14433,5,14438,,"SELECT
+  COUNT(*) AS customers
+FROM chinook.customer
+WHERE
+  country = 'Brazil'
+LIMIT 1000"
+chk_007,chinook,11,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,15497,7,15505,,"SELECT
+  g.name AS genre,
+  COUNT(*) AS tracks
+FROM chinook.track AS t
+JOIN chinook.genre AS g
+  ON g.genre_id = t.genre_id
+GROUP BY
+  g.name
+ORDER BY
+  tracks DESC
+LIMIT 5"
+chk_008,chinook,11,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,15466,7,15473,,"SELECT
+  billing_country,
+  SUM(total) AS revenue
+FROM chinook.invoice
+GROUP BY
+  billing_country
+ORDER BY
+  revenue DESC
+LIMIT 5"
+chk_009,chinook,11,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,15544,6,15550,,"SELECT
+  e.first_name || ' ' || e.last_name AS sales_rep,
+  COUNT(c.customer_id) AS customers
+FROM chinook.employee AS e
+LEFT JOIN chinook.customer AS c
+  ON c.support_rep_id = e.employee_id
+WHERE
+  e.title = 'Sales Support Agent'
+GROUP BY
+  e.first_name,
+  e.last_name
+ORDER BY
+  customers DESC
+LIMIT 1000"
+chk_010,chinook,11,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,15454,7,15461,,"SELECT
+  CAST(EXTRACT(YEAR FROM invoice_date) AS INT) AS year,
+  ROUND(CAST(AVG(total) AS DECIMAL), 2) AS avg_invoice_total
+FROM chinook.invoice
+GROUP BY
+  1
+ORDER BY
+  1
+LIMIT 1000"
+chk_011,chinook,11,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,15558,12,15571,,"SELECT
+  ar.name AS artist,
+  SUM(il.unit_price * il.quantity) AS revenue
+FROM chinook.invoice_line AS il
+JOIN chinook.track AS t
+  ON t.track_id = il.track_id
+JOIN chinook.album AS al
+  ON al.album_id = t.album_id
+JOIN chinook.artist AS ar
+  ON ar.artist_id = al.artist_id
+GROUP BY
+  ar.name
+ORDER BY
+  revenue DESC
+LIMIT 10"
+chk_012,chinook,11,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,14702,7,14709,,"SELECT
+  COUNT(*) AS never_purchased_tracks
+FROM chinook.track AS t
+LEFT JOIN chinook.invoice_line AS il
+  ON il.track_id = t.track_id
+WHERE
+  il.track_id IS NULL
+LIMIT 1000"
+chk_013,chinook,11,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,23129,8,23137,,"SELECT
+  mt.name AS media_type,
+  COUNT(*) AS tracks
+FROM chinook.track AS t
+JOIN chinook.media_type AS mt
+  ON mt.media_type_id = t.media_type_id
+GROUP BY
+  mt.name
+ORDER BY
+  tracks DESC
+LIMIT 100"
+chk_014,chinook,11,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,7539,7,7546,,"SELECT
+  g.name AS genre,
+  SUM(il.unit_price * il.quantity) AS revenue
+FROM chinook.invoice_line AS il
+JOIN chinook.track AS t
+  ON t.track_id = il.track_id
+JOIN chinook.genre AS g
+  ON g.genre_id = t.genre_id
+GROUP BY
+  g.name
+ORDER BY
+  revenue DESC
+LIMIT 5"
+chk_015,chinook,11,medium,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,15693,7,15701,,"SELECT
+  c.customer_id,
+  c.first_name,
+  c.last_name,
+  SUM(i.total) AS total_spent
+FROM chinook.customer AS c
+JOIN chinook.invoice AS i
+  ON i.customer_id = c.customer_id
+GROUP BY
+  c.customer_id,
+  c.first_name,
+  c.last_name
+HAVING
+  SUM(i.total) > 45
+ORDER BY
+  total_spent DESC
+LIMIT 100"
+chk_016,chinook,11,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,14840,7,14847,,"WITH customer_country_spend AS (
+  SELECT
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    c.country,
+    SUM(i.total) AS total_spent
+  FROM chinook.customer AS c
+  JOIN chinook.invoice AS i
+    ON i.customer_id = c.customer_id
+  GROUP BY
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    c.country
+), ranked AS (
+  SELECT
+    customer_id,
+    first_name,
+    last_name,
+    country,
+    total_spent,
+    RANK() OVER (PARTITION BY country ORDER BY total_spent DESC) AS rnk
+  FROM customer_country_spend
+)
+SELECT
+  country,
+  first_name,
+  last_name,
+  total_spent
+FROM ranked
+WHERE
+  rnk = 1
+ORDER BY
+  country,
+  first_name,
+  last_name
+LIMIT 100"
+chk_017,chinook,11,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,16058,6,16064,,"WITH RECURSIVE emp_hierarchy AS (
+  SELECT
+    employee_id,
+    first_name,
+    last_name,
+    reports_to,
+    0 AS level
+  FROM chinook.employee
+  WHERE
+    reports_to IS NULL
+  UNION ALL
+  SELECT
+    e.employee_id,
+    e.first_name,
+    e.last_name,
+    e.reports_to,
+    eh.level + 1
+  FROM chinook.employee AS e
+  JOIN emp_hierarchy AS eh
+    ON e.reports_to = eh.employee_id
+)
+SELECT
+  first_name || ' ' || last_name AS employee,
+  level
+FROM emp_hierarchy
+ORDER BY
+  level,
+  employee
+LIMIT 100"
+chk_018,chinook,11,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,14663,10,14673,,"SELECT
+  c.customer_id,
+  c.first_name,
+  c.last_name,
+  COUNT(DISTINCT g.genre_id) AS distinct_genres
+FROM chinook.customer AS c
+JOIN chinook.invoice AS i
+  ON i.customer_id = c.customer_id
+JOIN chinook.invoice_line AS il
+  ON il.invoice_id = i.invoice_id
+JOIN chinook.track AS t
+  ON t.track_id = il.track_id
+JOIN chinook.genre AS g
+  ON g.genre_id = t.genre_id
+GROUP BY
+  c.customer_id,
+  c.first_name,
+  c.last_name
+HAVING
+  COUNT(DISTINCT g.genre_id) >= 10
+ORDER BY
+  distinct_genres DESC,
+  c.customer_id
+LIMIT 100"
+chk_019,chinook,11,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,15690,16,15706,,"WITH monthly AS (
+  SELECT
+    DATE_TRUNC('MONTH', invoice_date) AS month,
+    SUM(total) AS revenue
+  FROM chinook.invoice
+  WHERE
+    invoice_date >= '2023-12-01' AND invoice_date < '2025-01-01'
+  GROUP BY
+    1
+)
+SELECT
+  TO_CHAR(month, 'YYYY-MM') AS month,
+  revenue,
+  revenue - LAG(revenue) OVER (ORDER BY month) AS change_from_prev
+FROM monthly
+WHERE
+  month >= '2024-01-01'
+ORDER BY
+  month
+LIMIT 100"
+chk_020,chinook,11,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,15645,13,15658,,"SELECT
+  COUNT(DISTINCT a.artist_id) AS distinct_artists
+FROM chinook.playlist_track AS pt
+JOIN chinook.track AS t
+  ON t.track_id = pt.track_id
+JOIN chinook.album AS a
+  ON a.album_id = t.album_id
+GROUP BY
+  pt.playlist_id
+ORDER BY
+  distinct_artists DESC
+LIMIT 1"
+ecom_001,ecommerce,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,12475,491,12966,,"SELECT
+  COUNT(DISTINCT order_id) AS total_orders
+FROM ecommerce.orders
+LIMIT 100"
+ecom_002,ecommerce,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,11457,268,11724,,"SELECT
+  COUNT(DISTINCT order_id) AS cancelled_orders
+FROM ecommerce.orders
+WHERE
+  status LIKE 'Cancelled%'
+LIMIT 1000"
+ecom_003,ecommerce,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,12788,51,12839,,"SELECT
+  COUNT(DISTINCT order_id) AS b2b_orders
+FROM ecommerce.orders
+WHERE
+  is_b2b = TRUE
+LIMIT 1000"
+ecom_004,ecommerce,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,12653,10,12663,,"SELECT
+  MIN(order_date) AS first_order_date,
+  MAX(order_date) AS last_order_date
+FROM ecommerce.orders
+LIMIT 1000"
+ecom_005,ecommerce,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,12468,1216,13685,,"SELECT
+  COUNT(DISTINCT order_id) AS orders
+FROM ecommerce.orders
+WHERE
+  has_promotion = TRUE
+LIMIT 1000"
+ecom_006,ecommerce,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,11460,1518,12978,,"SELECT
+  o.fulfilment,
+  COUNT(DISTINCT o.order_id) AS orders
+FROM ecommerce.orders AS o
+GROUP BY
+  o.fulfilment
+ORDER BY
+  orders DESC
+LIMIT 100"
+ecom_007,ecommerce,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,10489,170,10658,,"SELECT
+  SUM(i.amount) AS total_revenue
+FROM ecommerce.orders AS o
+JOIN ecommerce.order_items AS i
+  ON i.order_id = o.order_id
+WHERE
+  o.status NOT LIKE 'Cancelled%'
+LIMIT 1000"
+ecom_008,ecommerce,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,13213,227,13440,,"SELECT
+  p.category,
+  SUM(i.amount) AS revenue
+FROM ecommerce.orders AS o
+JOIN ecommerce.order_items AS i
+  ON i.order_id = o.order_id
+JOIN ecommerce.products AS p
+  ON i.sku = p.sku
+WHERE
+  o.status NOT LIKE 'Cancelled%'
+GROUP BY
+  p.category
+ORDER BY
+  revenue DESC NULLS LAST
+LIMIT 100"
+ecom_009,ecommerce,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,11729,1522,13252,,"SELECT
+  DATE_TRUNC('MONTH', order_date) AS month,
+  COUNT(DISTINCT order_id) AS orders
+FROM ecommerce.orders
+GROUP BY
+  1
+ORDER BY
+  1
+LIMIT 100"
+ecom_010,ecommerce,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,10408,1360,11768,,"SELECT
+  ship_city,
+  COUNT(DISTINCT order_id) AS orders
+FROM ecommerce.orders
+GROUP BY
+  ship_city
+ORDER BY
+  orders DESC
+LIMIT 10"
+ecom_011,ecommerce,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,10590,1237,11827,,"SELECT
+  ROUND(SUM(i.amount) / COUNT(DISTINCT o.order_id), 2) AS aov
+FROM ecommerce.orders AS o
+JOIN ecommerce.order_items AS i
+  ON i.order_id = o.order_id
+WHERE
+  o.status NOT LIKE 'Cancelled%'
+LIMIT 1000"
+ecom_012,ecommerce,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,11593,1580,13173,,"SELECT
+  status,
+  COUNT(DISTINCT order_id) AS orders
+FROM ecommerce.orders
+GROUP BY
+  status
+ORDER BY
+  orders DESC
+LIMIT 100"
+ecom_013,ecommerce,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,10837,209,11045,,"SELECT
+  o.ship_service_level,
+  SUM(i.amount) AS revenue
+FROM ecommerce.orders AS o
+JOIN ecommerce.order_items AS i
+  ON i.order_id = o.order_id
+WHERE
+  o.status NOT LIKE 'Cancelled%'
+  AND o.ship_service_level IN ('Expedited', 'Standard')
+GROUP BY
+  o.ship_service_level
+ORDER BY
+  o.ship_service_level
+LIMIT 1000"
+ecom_014,ecommerce,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,12542,1325,13867,,"SELECT
+  o.ship_state,
+  ROUND(
+    CAST(COUNT(DISTINCT CASE WHEN o.status LIKE 'Cancelled%' THEN o.order_id END) * 1.0 / COUNT(DISTINCT o.order_id) AS DECIMAL),
+    4
+  ) AS cancellation_rate
+FROM ecommerce.orders AS o
+GROUP BY
+  o.ship_state
+HAVING
+  COUNT(DISTINCT o.order_id) >= 100
+ORDER BY
+  cancellation_rate DESC
+LIMIT 5"
+ecom_015,ecommerce,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,10552,115,10667,,"SELECT
+  o.order_date,
+  SUM(i.amount) AS revenue
+FROM ecommerce.orders AS o
+JOIN ecommerce.order_items AS i
+  ON i.order_id = o.order_id
+WHERE
+  o.status NOT LIKE 'Cancelled%'
+  AND o.order_date >= CAST('2022-06-01' AS DATE)
+  AND o.order_date < CAST('2022-07-01' AS DATE)
+GROUP BY
+  o.order_date
+ORDER BY
+  o.order_date
+LIMIT 100"
+ecom_016,ecommerce,5,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,12844,177,13021,,"WITH monthly_revenue AS (
+  SELECT
+    DATE_TRUNC('MONTH', o.order_date) AS month,
+    SUM(i.amount) AS revenue
+  FROM ecommerce.orders AS o
+  JOIN ecommerce.order_items AS i
+    ON i.order_id = o.order_id
+  WHERE
+    o.status NOT LIKE 'Cancelled%'
+  GROUP BY
+    DATE_TRUNC('MONTH', o.order_date)
+)
+SELECT
+  month,
+  revenue,
+  LAG(revenue) OVER (ORDER BY month) AS prev_month_revenue,
+  ROUND(
+    (
+      revenue - LAG(revenue) OVER (ORDER BY month)
+    ) * 100.0 / NULLIF(LAG(revenue) OVER (ORDER BY month), 0),
+    2
+  ) AS growth_pct
+FROM monthly_revenue
+ORDER BY
+  month
+LIMIT 100"
+ecom_017,ecommerce,5,hard,groq:qwen/qwen3.8-27b,full,False,False,True,False,1,13110,0,13110,"SQL could not be parsed: Expecting ). Line 8, Col: 8.","WITH state_cat_rev AS (
+    SELECT
+        o.ship_state,
+        p.category,
+        SUM(i.amount) AS revenue
+    FROM ecommerce.orders o
+    JOIN ecommerce.order_items i ON i.oid = o.oid
+    LEFT LJOIN ecommerce.products p ON p.spu = i.spu
+    WHERE o.status NOT LIKE 'Cancelled%'
+    GROUP BY o.ship_state, p.category
+),
+top_state_cat AS (
+    SELECT
+        s.ship_state,
+        s.category,
+        s.revenue,
+        ROW_NUMBER() OVER (PARTITION BY s.ship_state
+                            ) AS rn
+    FROM state_cat_rev s
+),
+state_rev AS (
+    SELECT
+        o.ship_state,
+        SUM(i.amount) AS state_revenue
+    FROM ecommerce.orders o
+    LEFT LJOIN ecommerce.products p ON p.spu = i.spu
+    WHERE o.status NOT LIKE 'Cancelled%'
+    GROUP BY o.ship_state
+)
+SELECT
+    t.ship_state,
+    t.category,
+    t.revenue
+FROM top_state_cat t
+JOIN state_rev sr ON sr.ship_state = t.ship_state
+WHERE t.rn = 1
+    AND sr.ship_state IN (
+        SELECT sr2.ship_state
+        FROM state_rev sr2
+        WHERE sr2.state_revenue IS NOT NULL
+        GROUP BY sr2.ship_state
+        HAVING SUM(sr2.state_reve) >= 0
+        ORDER BY SUM(sr2.state_reve) DESC
+        LIMIT 10
+    )
+ORDER BY t.revenue DESC
+LIMIT 100"
+ecom_018,ecommerce,5,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,11881,189,12070,,"WITH sku_revenue AS (
+  SELECT
+    i.sku,
+    SUM(i.amount) AS sku_rev
+  FROM ecommerce.orders AS o
+  JOIN ecommerce.order_items AS i
+    ON i.order_id = o.order_id
+  WHERE
+    o.status NOT LIKE 'Cancelled%'
+  GROUP BY
+    i.sku
+), top10 AS (
+  SELECT
+    sku,
+    sku_rev
+  FROM sku_revenue
+  ORDER BY
+    sku_rev DESC NULLS LAST
+  LIMIT 10
+)
+SELECT
+  ROUND(
+    (
+      SELECT
+        SUM(sku_rev)
+      FROM top10
+    ) * 100.0 / (
+      SELECT
+        SUM(sku_rev)
+      FROM sku_revenue
+    ),
+    2
+  ) AS share_pct
+LIMIT 1000"
+ecom_019,ecommerce,5,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,11748,393,12141,,"SELECT
+  EXTRACT(DOW FROM o.order_date) AS day_of_week,
+  SUM(i.amount) / COUNT(DISTINCT o.order_date) AS avg_daily_revenue
+FROM ecommerce.orders AS o
+JOIN ecommerce.order_items AS i
+  ON i.order_id = o.order_id
+WHERE
+  o.status NOT LIKE 'Cancelled%'
+GROUP BY
+  EXTRACT(DOW FROM o.order_date)
+ORDER BY
+  avg_daily_revenue DESC
+LIMIT 1"
+ecom_020,ecommerce,5,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,10508,1553,12061,,"SELECT
+  COUNT(*) AS orders_with_multiple_skus
+FROM (
+  SELECT
+    o.order_id
+  FROM ecommerce.orders AS o
+  JOIN ecommerce.order_items AS i
+    ON i.order_id = o.order_id
+  GROUP BY
+    o.order_id
+  HAVING
+    COUNT(DISTINCT i.sku) > 1
+) AS sub
+LIMIT 1000"
+ipl_001,ipl,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17113,5,17118,,"SELECT
+  COUNT(*) AS matches
+FROM ipl.matches
+WHERE
+  season = 2023
+LIMIT 1000"
+ipl_002,ipl,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17510,5,17516,,"SELECT
+  COUNT(*) AS dl_matches
+FROM ipl.matches
+WHERE
+  method = 'D/L'
+LIMIT 100"
+ipl_003,ipl,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17511,6,17517,,"SELECT
+  COUNT(*) AS super_over_matches
+FROM ipl.matches
+WHERE
+  super_over = TRUE
+LIMIT 100"
+ipl_004,ipl,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17567,6,17574,,"SELECT
+  MAX(result_margin) AS largest_winning_margin_in_runs
+FROM ipl.matches
+WHERE
+  result = 'runs' AND winner IS NOT NULL
+LIMIT 1000"
+ipl_005,ipl,2,easy,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,16484,392,16876,,"SELECT
+  SUM(sixes) AS total_sixes
+FROM ipl.batting_innings
+LIMIT 1000"
+ipl_006,ipl,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17514,6,17520,,"SELECT
+  COUNT(*) AS wins
+FROM ipl.matches
+WHERE
+  winner = 'Mumbai Indians'
+LIMIT 100"
+ipl_007,ipl,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17508,6,17514,,"SELECT
+  winner AS team,
+  COUNT(*) AS wins
+FROM ipl.matches
+WHERE
+  winner IS NOT NULL
+GROUP BY
+  winner
+ORDER BY
+  wins DESC
+LIMIT 5"
+ipl_008,ipl,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17528,423,17951,,"SELECT
+  bowler,
+  SUM(wickets) AS total_wickets
+FROM ipl.bowling_innings
+GROUP BY
+  bowler
+ORDER BY
+  total_wickets DESC
+LIMIT 6"
+ipl_009,ipl,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,16563,385,16947,,"SELECT
+  batter,
+  COUNT(*) AS centuries
+FROM ipl.batting_innings
+WHERE
+  runs >= 100
+GROUP BY
+  batter
+HAVING
+  COUNT(*) >= 2
+ORDER BY
+  centuries DESC,
+  batter
+LIMIT 100"
+ipl_010,ipl,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17699,15,17713,,"SELECT
+  ROUND(100.0 * SUM(runs) / NULLIF(SUM(balls_faced), 0), 2) AS strike_rate
+FROM ipl.batting_innings
+WHERE
+  batter = 'V Kohli'
+LIMIT 1000"
+ipl_011,ipl,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17555,10,17565,,"SELECT
+  ROUND(SUM(runs_conceded) / (
+    SUM(balls_bowled) / 6.0
+  ), 2) AS economy
+FROM ipl.bowling_innings
+WHERE
+  bowler = 'JJ Bumrah'
+LIMIT 1000"
+ipl_012,ipl,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17832,6,17839,,"SELECT
+  ROUND(
+    CAST(100.0 * SUM(CASE WHEN winner = toss_winner THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0) AS DECIMAL),
+    2
+  ) AS percentage
+FROM ipl.matches
+WHERE
+  winner IS NOT NULL
+LIMIT 1000"
+ipl_013,ipl,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17739,146,17885,,"SELECT
+  d.bowler,
+  COUNT(*) AS wickets
+FROM ipl.deliveries AS d
+WHERE
+  d.phase = 'death'
+  AND d.inning <= 2
+  AND d.is_wicket = TRUE
+  AND NOT d.dismissal_kind IN ('run out', 'retired hurt', 'retired out', 'obstructing the field')
+GROUP BY
+  d.bowler
+ORDER BY
+  wickets DESC
+LIMIT 10"
+ipl_014,ipl,2,medium,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,16574,300,16874,,"SELECT
+  phase,
+  ROUND(SUM(total_runs) / (
+    COUNT(*) / 6.0
+  ), 2) AS avg_runs_per_over
+FROM ipl.deliveries
+WHERE
+  inning <= 2
+GROUP BY
+  phase
+ORDER BY
+  phase
+LIMIT 1000"
+ipl_015,ipl,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17511,4,17516,,"SELECT
+  player_of_match
+FROM ipl.matches
+WHERE
+  match_type = 'Final' AND player_of_match IS NOT NULL
+LIMIT 100"
+ipl_016,ipl,2,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,18031,8,18038,,"WITH team_wins AS (
+  SELECT
+    m.season,
+    m.winner AS team,
+    COUNT(*) AS wins
+  FROM ipl.matches AS m
+  WHERE
+    m.winner IS NOT NULL
+  GROUP BY
+    m.season,
+    m.winner
+), ranked AS (
+  SELECT
+    season,
+    team,
+    wins,
+    RANK() OVER (PARTITION BY season ORDER BY wins DESC) AS rnk
+  FROM team_wins
+)
+SELECT
+  season,
+  team,
+  wins
+FROM ranked
+WHERE
+  rnk = 1
+ORDER BY
+  season,
+  team
+LIMIT 100"
+ipl_017,ipl,2,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,16858,408,17265,,"SELECT
+  d.bowler,
+  COUNT(*) FILTER(WHERE
+    d.extras_type IS NULL OR NOT d.extras_type IN ('wides', 'noballs')) AS legal_balls,
+  ROUND(
+    SUM(
+      d.total_runs - CASE WHEN d.extras_type IN ('byes', 'legbyes') THEN d.extra_runs ELSE 0 END
+    ) / (
+      COUNT(*) FILTER(WHERE
+        d.extras_type IS NULL OR NOT d.extras_type IN ('wides', 'noballs')) / 6.0
+    ),
+    2
+  ) AS economy
+FROM ipl.deliveries AS d
+JOIN ipl.matches AS m
+  ON d.match_id = m.match_id
+WHERE
+  d.phase = 'death' AND d.inning <= 2 AND m.season >= 2018
+GROUP BY
+  d.bowler
+HAVING
+  COUNT(*) FILTER(WHERE
+    d.extras_type IS NULL OR NOT d.extras_type IN ('wides', 'noballs')) >= 300
+ORDER BY
+  economy ASC
+LIMIT 10"
+ipl_018,ipl,2,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17809,25,17834,,"WITH team_runs AS (
+  SELECT
+    team,
+    batter,
+    SUM(runs) AS total_runs,
+    ROW_NUMBER() OVER (PARTITION BY team ORDER BY SUM(runs) DESC) AS rn
+  FROM ipl.batting_innings
+  WHERE
+    season = 2023
+  GROUP BY
+    team,
+    batter
+)
+SELECT
+  team,
+  batter,
+  total_runs
+FROM team_runs
+WHERE
+  rn <= 3
+ORDER BY
+  team,
+  total_runs DESC
+LIMIT 1000"
+ipl_019,ipl,2,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,17004,362,17367,,"WITH first_innings AS (
+  SELECT
+    m.season,
+    SUM(d.total_runs) AS first_innings_total
+  FROM ipl.deliveries AS d
+  JOIN ipl.matches AS m
+    ON d.match_id = m.match_id
+  WHERE
+    d.inning = 1
+  GROUP BY
+    m.season
+), with_prev AS (
+  SELECT
+    season,
+    first_innings_total,
+    LAG(first_innings_total) OVER (ORDER BY season) AS prev_total
+  FROM first_innings
+)
+SELECT
+  season,
+  ROUND(CAST(first_innings_total AS DECIMAL), 2) AS avg_first_innings_total,
+  ROUND(CAST((
+    first_innings_total - prev_total
+  ) AS DECIMAL), 2) AS change_from_prev
+FROM with_prev
+ORDER BY
+  season
+LIMIT 100"
+ipl_020,ipl,2,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,17673,375,18048,,"SELECT
+  bi.batter,
+  SUM(bi.runs) AS total_runs
+FROM ipl.batting_innings AS bi
+JOIN ipl.matches AS m
+  ON bi.match_id = m.match_id
+WHERE
+  m.result = 'wickets'
+GROUP BY
+  bi.batter
+ORDER BY
+  total_runs DESC
+LIMIT 10"
+nfx_001,netflix,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,7417,6,7423,,"SELECT
+  COUNT(*) AS total_titles
+FROM netflix.titles
+LIMIT 1000"
+nfx_002,netflix,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,9468,6,9474,,"SELECT
+  COUNT(*) AS movies
+FROM netflix.titles
+WHERE
+  type = 'Movie'
+LIMIT 1000"
+nfx_003,netflix,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,8369,5,8374,,"SELECT
+  COUNT(*) AS titles
+FROM netflix.titles
+WHERE
+  release_year = 2019
+LIMIT 1000"
+nfx_004,netflix,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,9440,8,9448,,"SELECT
+  MIN(duration_minutes) AS shortest_movie_length
+FROM netflix.titles
+WHERE
+  type = 'Movie' AND duration_minutes IS NOT NULL
+LIMIT 1000"
+nfx_005,netflix,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,9514,7,9522,,"SELECT
+  COUNT(*) AS titles
+FROM netflix.titles
+WHERE
+  rating = 'TV-MA'
+LIMIT 1000"
+nfx_006,netflix,5,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,8494,8,8502,,"SELECT
+  COUNT(DISTINCT genre) AS genre_count
+FROM netflix.title_genres
+LIMIT 1000"
+nfx_007,netflix,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,9508,11,9519,,"SELECT
+  COUNT(DISTINCT tc.show_id) AS indian_titles
+FROM netflix.title_countries AS tc
+WHERE
+  tc.country = 'India'
+LIMIT 100"
+nfx_008,netflix,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,8481,9,8490,,"SELECT
+  director,
+  COUNT(*) AS titles
+FROM netflix.title_directors
+GROUP BY
+  director
+ORDER BY
+  titles DESC
+LIMIT 5"
+nfx_009,netflix,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,9616,6,9622,,"SELECT
+  seasons,
+  COUNT(*) AS tv_shows
+FROM netflix.titles
+WHERE
+  type = 'TV Show'
+GROUP BY
+  seasons
+ORDER BY
+  seasons
+LIMIT 100"
+nfx_010,netflix,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,8434,8,8442,,"SELECT
+  rating,
+  AVG(duration_minutes) AS avg_length
+FROM netflix.titles
+WHERE
+  type = 'Movie' AND rating IS NOT NULL AND duration_minutes IS NOT NULL
+GROUP BY
+  rating
+ORDER BY
+  rating
+LIMIT 100"
+nfx_011,netflix,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,9498,301,9800,,"SELECT
+  actor,
+  COUNT(DISTINCT show_id) AS title_count
+FROM netflix.title_cast
+GROUP BY
+  actor
+ORDER BY
+  title_count DESC
+LIMIT 8"
+nfx_012,netflix,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,8607,9,8616,,"SELECT
+  COUNT(DISTINCT g1.show_id) AS titles
+FROM netflix.title_genres AS g1
+JOIN netflix.title_genres AS g2
+  ON g2.show_id = g1.show_id
+WHERE
+  g1.genre = 'Dramas' AND g2.genre = 'Comedies'
+LIMIT 100"
+nfx_013,netflix,5,medium,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,9615,6,9620,,"SELECT
+  EXTRACT(MONTH FROM date_added) AS month,
+  COUNT(*) AS titles
+FROM netflix.titles
+WHERE
+  EXTRACT(YEAR FROM date_added) = 2020
+GROUP BY
+  EXTRACT(MONTH FROM date_added)
+ORDER BY
+  month
+LIMIT 100"
+nfx_014,netflix,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,8493,102,8595,,"SELECT
+  c.country,
+  COUNT(DISTINCT c.show_id) AS titles
+FROM netflix.title_countries AS c
+GROUP BY
+  c.country
+HAVING
+  COUNT(DISTINCT c.show_id) > 200
+ORDER BY
+  titles DESC
+LIMIT 100"
+nfx_015,netflix,5,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,9522,11,9533,,"SELECT
+  type,
+  AVG(release_year) AS avg_release_year
+FROM netflix.titles
+WHERE
+  release_year IS NOT NULL
+GROUP BY
+  type
+ORDER BY
+  type
+LIMIT 100"
+nfx_016,netflix,5,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,8878,550,9428,,"WITH genre_counts AS (
+  SELECT
+    EXTRACT(YEAR FROM t.date_added) AS year_added,
+    g.genre,
+    COUNT(DISTINCT t.show_id) AS title_count
+  FROM netflix.titles AS t
+  JOIN netflix.title_genres AS g
+    ON g.show_id = t.show_id
+  WHERE
+    EXTRACT(YEAR FROM t.date_added) BETWEEN 2016 AND 2021
+  GROUP BY
+    EXTRACT(YEAR FROM t.date_added),
+    g.genre
+), ranked AS (
+  SELECT
+    year_added,
+    genre,
+    title_count,
+    RANK() OVER (PARTITION BY year_added ORDER BY title_count DESC) AS rnk
+  FROM genre_counts
+)
+SELECT
+  year_added,
+  genre,
+  title_count
+FROM ranked
+WHERE
+  rnk = 1
+ORDER BY
+  year_added,
+  genre
+LIMIT 100"
+nfx_017,netflix,5,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,7596,413,8009,,"SELECT
+  c.actor,
+  COUNT(DISTINCT tc.country) AS num_countries
+FROM netflix.title_cast AS c
+JOIN netflix.title_countries AS tc
+  ON tc.show_id = c.show_id
+GROUP BY
+  c.actor
+HAVING
+  COUNT(DISTINCT tc.country) >= 8
+ORDER BY
+  num_countries DESC
+LIMIT 100"
+nfx_018,netflix,5,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,8711,178,8889,,"SELECT
+  EXTRACT(YEAR FROM t.date_added) AS year_added,
+  ROUND(
+    CAST(100.0 * COUNT(DISTINCT CASE WHEN c.country = 'India' THEN t.show_id END) / NULLIF(COUNT(DISTINCT t.show_id), 0) AS DECIMAL),
+    2
+  ) AS pct_indian
+FROM netflix.titles AS t
+LEFT JOIN netflix.title_countries AS c
+  ON c.show_id = t.show_id
+WHERE
+  EXTRACT(YEAR FROM t.date_added) BETWEEN 2015 AND 2021
+GROUP BY
+  EXTRACT(YEAR FROM t.date_added)
+ORDER BY
+  year_added
+LIMIT 100"
+nfx_019,netflix,5,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,9841,12,9854,,"SELECT
+  type,
+  AVG(EXTRACT(YEAR FROM date_added) - release_year) AS avg_years_after_release
+FROM netflix.titles
+WHERE
+  date_added IS NOT NULL AND release_year IS NOT NULL
+GROUP BY
+  type
+LIMIT 100"
+nfx_020,netflix,5,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,6491,4375,10866,,"SELECT
+  a.actor AS actor1,
+  b.actor AS actor2,
+  COUNT(DISTINCT a.show_id) AS titles
+FROM netflix.title_cast AS a
+JOIN netflix.title_cast AS b
+  ON a.show_id = b.show_id
+WHERE
+  a.actor < b.actor
+GROUP BY
+  a.actor,
+  b.actor
+ORDER BY
+  titles DESC
+LIMIT 6"
+oli_001,olist,8,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,12633,16,12649,,"SELECT
+  COUNT(*) AS total_orders
+FROM olist.orders
+LIMIT 100"
+oli_002,olist,8,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17624,7,17631,,"SELECT
+  COUNT(*) AS sellers_in_sp
+FROM olist.sellers
+WHERE
+  state = 'SP'
+LIMIT 100"
+oli_003,olist,8,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17553,26,17579,,"SELECT
+  COUNT(*) AS delivered_orders
+FROM olist.orders
+WHERE
+  order_status = 'delivered'
+LIMIT 100"
+oli_004,olist,8,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17491,22,17513,,"SELECT
+  AVG(review_score) AS avg_review_score
+FROM olist.reviews
+LIMIT 100"
+oli_005,olist,8,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,16482,13,16495,,"SELECT
+  COUNT(*) AS products_without_category
+FROM olist.products
+WHERE
+  category_english IS NULL
+LIMIT 100"
+oli_006,olist,8,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17435,22,17457,,"SELECT
+  MAX(price) AS highest_price
+FROM olist.order_items
+LIMIT 1000"
+oli_007,olist,8,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17604,25,17629,,"SELECT
+  COUNT(DISTINCT customer_unique_id) AS real_customers
+FROM olist.customers
+LIMIT 100"
+oli_008,olist,8,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,17558,31,17589,,"SELECT
+  order_status,
+  COUNT(*) AS order_count
+FROM olist.orders
+GROUP BY
+  order_status
+ORDER BY
+  order_count DESC
+LIMIT 100"
+oli_009,olist,8,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,16599,137,16736,,"SELECT
+  c.state,
+  COUNT(*) AS orders
+FROM olist.orders AS o
+JOIN olist.customers AS c
+  ON c.customer_id = o.customer_id
+GROUP BY
+  c.state
+ORDER BY
+  orders DESC
+LIMIT 5"
+oli_010,olist,8,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,18041,69,18109,,"SELECT
+  payment_type,
+  SUM(payment_value) AS total_payment_value
+FROM olist.payments
+GROUP BY
+  payment_type
+ORDER BY
+  total_payment_value DESC
+LIMIT 100"
+oli_011,olist,8,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,16644,77,16721,,"SELECT
+  ROUND(
+    CAST(AVG(
+      EXTRACT(EPOCH FROM order_delivered_customer_date - order_purchase_timestamp) / 86400
+    ) AS DECIMAL),
+    2
+  ) AS avg_delivery_days
+FROM olist.orders
+WHERE
+  order_status = 'delivered' AND order_delivered_customer_date IS NOT NULL
+LIMIT 1000"
+oli_012,olist,8,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,878,71,949,,"SELECT
+  s.seller_id,
+  COUNT(*) AS items_sold
+FROM olist.order_items AS i
+JOIN olist.sellers AS s
+  ON s.seller_id = i.seller_id
+GROUP BY
+  s.seller_id
+ORDER BY
+  items_sold DESC
+LIMIT 10"
+oli_013,olist,8,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,551,224,775,,"SELECT
+  ROUND(CAST(AVG(total_paid) AS DECIMAL), 2) AS avg_total_paid_per_order
+FROM (
+  SELECT
+    order_id,
+    SUM(payment_value) AS total_paid
+  FROM olist.payments
+  GROUP BY
+    order_id
+) AS p
+LIMIT 1000"
+oli_014,olist,8,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,461,30,491,,"SELECT
+  ROUND(
+    CAST(100.0 * SUM(
+      CASE
+        WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date
+        THEN 1
+        ELSE 0
+      END
+    ) / COUNT(*) AS DECIMAL),
+    2
+  ) AS late_delivery_pct
+FROM olist.orders AS o
+WHERE
+  o.order_status = 'delivered'
+  AND o.order_delivered_customer_date IS NOT NULL
+  AND o.order_estimated_delivery_date IS NOT NULL
+LIMIT 1000"
+oli_015,olist,8,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,9566,228,9794,,"SELECT
+  CAST(EXTRACT(YEAR FROM order_purchase_timestamp) AS INT) AS year,
+  COUNT(*) AS orders
+FROM olist.orders
+GROUP BY
+  1
+ORDER BY
+  1
+LIMIT 100"
+oli_016,olist,8,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,1140,88,1228,,"WITH monthly_gmv AS (
+  SELECT
+    CAST(DATE_TRUNC('MONTH', o.order_purchase_timestamp) AS DATE) AS month,
+    SUM(i.price) AS gmv
+  FROM olist.orders AS o
+  JOIN olist.order_items AS i
+    ON i.order_id = o.order_id
+  WHERE
+    o.order_purchase_timestamp >= CAST('2017-01-01' AS TIMESTAMP)
+    AND o.order_purchase_timestamp < CAST('2018-01-01' AS TIMESTAMP)
+  GROUP BY
+    1
+)
+SELECT
+  month,
+  gmv,
+  gmv - LAG(gmv) OVER (ORDER BY month) AS gmv_change
+FROM monthly_gmv
+ORDER BY
+  month
+LIMIT 100"
+oli_017,olist,8,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,414,256,670,,"SELECT
+  COUNT(*) AS repeat_customers
+FROM (
+  SELECT
+    c.customer_unique_id
+  FROM olist.orders AS o
+  JOIN olist.customers AS c
+    ON c.customer_id = o.customer_id
+  GROUP BY
+    c.customer_unique_id
+  HAVING
+    COUNT(*) > 1
+) AS t
+LIMIT 1000"
+oli_018,olist,8,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,704,331,1035,,"WITH gmv_by_state_cat AS (
+  SELECT
+    c.state,
+    p.category_english,
+    SUM(i.price) AS gmv
+  FROM olist.order_items AS i
+  JOIN olist.orders AS o
+    ON o.order_id = i.order_id
+  JOIN olist.customers AS c
+    ON c.customer_id = o.customer_id
+  JOIN olist.products AS p
+    ON p.product_id = i.product_id
+  WHERE
+    c.state IN ('SP', 'RJ', 'MG') AND p.category_english IS NOT NULL
+  GROUP BY
+    c.state,
+    p.category_english
+), ranked AS (
+  SELECT
+    state,
+    category_english,
+    gmv,
+    ROW_NUMBER() OVER (PARTITION BY state ORDER BY gmv DESC) AS rn
+  FROM gmv_by_state_cat
+)
+SELECT
+  state,
+  category_english,
+  gmv
+FROM ranked
+WHERE
+  rn <= 3
+ORDER BY
+  state,
+  rn
+LIMIT 100"
+oli_019,olist,8,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,7560,210,7770,,"SELECT
+  payment_type,
+  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY
+    payment_value) AS median_payment_value
+FROM olist.payments
+GROUP BY
+  payment_type
+ORDER BY
+  payment_type
+LIMIT 100"
+oli_020,olist,8,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,1005,370,1375,,"SELECT
+  COUNT(*) AS orders_with_multiple_sellers
+FROM (
+  SELECT
+    order_id
+  FROM olist.order_items
+  GROUP BY
+    order_id
+  HAVING
+    COUNT(DISTINCT seller_id) > 1
+) AS t
+LIMIT 100"
+plc_001,placements,1,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,209,6,215,,"SELECT
+  COUNT(*) AS total_students
+FROM placements.students
+LIMIT 1000"
+plc_002,placements,1,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,212,5,217,,"SELECT
+  COUNT(*) AS placed_students
+FROM placements.students
+WHERE
+  is_placed
+LIMIT 1000"
+plc_003,placements,1,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,221,7,228,,"SELECT
+  MAX(salary) AS highest_salary
+FROM placements.students
+WHERE
+  is_placed
+LIMIT 1000"
+plc_004,placements,1,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,283,4,287,,"SELECT
+  COUNT(*) AS students_with_work_experience
+FROM placements.students
+WHERE
+  has_work_experience = TRUE
+LIMIT 1000"
+plc_005,placements,1,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,206,4,210,,"SELECT
+  MIN(salary) AS lowest_salary
+FROM placements.students
+WHERE
+  is_placed
+LIMIT 1000"
+plc_006,placements,1,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,246,8,253,,"SELECT
+  hsc_stream,
+  COUNT(*) AS students
+FROM placements.students
+GROUP BY
+  hsc_stream
+ORDER BY
+  hsc_stream
+LIMIT 1000"
+plc_007,placements,1,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,26409,5,26414,,"SELECT
+  ROUND(CAST(100.0 * AVG(CAST(is_placed AS INT)) AS DECIMAL), 2) AS placement_rate_pct
+FROM placements.students
+LIMIT 1000"
+plc_008,placements,1,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,1013,13,1027,,"SELECT
+  gender,
+  ROUND(CAST(100.0 * AVG(CAST(is_placed AS INT)) AS DECIMAL), 1) AS placement_rate_pct
+FROM placements.students
+GROUP BY
+  gender
+ORDER BY
+  gender
+LIMIT 1000"
+plc_009,placements,1,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,270,6,276,,"SELECT
+  degree_field,
+  ROUND(CAST(AVG(salary) AS DECIMAL), 2) AS avg_salary
+FROM placements.students
+WHERE
+  is_placed
+GROUP BY
+  degree_field
+ORDER BY
+  degree_field
+LIMIT 1000"
+plc_010,placements,1,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,457,13,470,,"SELECT
+  hsc_stream,
+  COUNT(*) AS students,
+  ROUND(CAST(100.0 * AVG(CAST(is_placed AS INT)) AS DECIMAL), 1) AS placement_rate_pct
+FROM placements.students
+GROUP BY
+  hsc_stream
+ORDER BY
+  hsc_stream
+LIMIT 1000"
+plc_011,placements,1,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,243,12,255,,"SELECT
+  is_placed,
+  ROUND(CAST(AVG(employability_test_percent) AS DECIMAL), 2) AS avg_employability_test_percent
+FROM placements.students
+GROUP BY
+  is_placed
+LIMIT 1000"
+plc_012,placements,1,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,255,6,261,,"SELECT
+  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY
+    salary) AS median_salary
+FROM placements.students
+WHERE
+  is_placed
+LIMIT 100"
+plc_013,placements,1,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,242,8,250,,"SELECT
+  COUNT(*) AS students_above_80,
+  COUNT(*) FILTER(WHERE
+    is_placed) AS placed
+FROM placements.students
+WHERE
+  ssc_percent > 80
+LIMIT 1000"
+plc_014,placements,1,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,278,8,286,,"SELECT
+  ssc_board,
+  COUNT(*) AS students,
+  ROUND(CAST(100.0 * AVG(CAST(is_placed AS INT)) AS DECIMAL), 1) AS placement_rate_pct
+FROM placements.students
+GROUP BY
+  ssc_board
+ORDER BY
+  ssc_board
+LIMIT 1000"
+plc_015,placements,1,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,293,11,305,,"SELECT
+  gender,
+  mba_specialisation,
+  ROUND(CAST(AVG(salary) AS DECIMAL), 2) AS avg_salary
+FROM placements.students
+WHERE
+  is_placed
+GROUP BY
+  gender,
+  mba_specialisation
+ORDER BY
+  gender,
+  mba_specialisation
+LIMIT 100"
+plc_016,placements,1,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,953,10,964,,"SELECT
+  CORR(degree_percent, mba_percent) AS correlation
+FROM placements.students
+LIMIT 1000"
+plc_017,placements,1,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,2,1023,9,1033,,"SELECT
+  quartile,
+  COUNT(*) AS students,
+  ROUND(CAST(100.0 * AVG(CAST(is_placed AS INT)) AS DECIMAL), 1) AS placement_rate_pct
+FROM (
+  SELECT
+    is_placed,
+    NTILE(4) OVER (ORDER BY employability_test_percent) AS quartile
+  FROM placements.students
+) AS sub
+GROUP BY
+  quartile
+ORDER BY
+  quartile
+LIMIT 1000"
+plc_018,placements,1,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,370,18,388,,"SELECT
+  mba_specialisation,
+  student_id,
+  salary,
+  salary_rank
+FROM (
+  SELECT
+    mba_specialisation,
+    student_id,
+    salary,
+    RANK() OVER (PARTITION BY mba_specialisation ORDER BY salary DESC) AS salary_rank,
+    RANK() OVER (PARTITION BY mba_specialisation ORDER BY salary DESC) AS _w
+  FROM placements.students
+  WHERE
+    is_placed
+  ORDER BY
+    mba_specialisation,
+    salary_rank
+  LIMIT 1000
+) AS _t
+WHERE
+  _w <= 3"
+plc_019,placements,1,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,333,10,343,,"SELECT
+  WIDTH_BUCKET(hsc_percent, 40, 100, 6) AS band,
+  COUNT(*) AS students,
+  ROUND(CAST(100.0 * AVG(CAST(is_placed AS INT)) AS DECIMAL), 1) AS placement_rate_pct
+FROM placements.students
+GROUP BY
+  band
+ORDER BY
+  band
+LIMIT 1000"
+plc_020,placements,1,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,290,9,298,,"SELECT
+  has_work_experience,
+  PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY
+    salary) AS p90_salary
+FROM placements.students
+WHERE
+  is_placed
+GROUP BY
+  has_work_experience
+ORDER BY
+  has_work_experience
+LIMIT 1000"
+stu_001,startups,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,272,10,282,,"SELECT
+  COUNT(*) AS total_rounds
+FROM startups.funding_rounds
+LIMIT 1000"
+stu_002,startups,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,274,8,282,,"SELECT
+  COUNT(*) AS undisclosed_rounds
+FROM startups.funding_rounds
+WHERE
+  amount_usd IS NULL
+LIMIT 1000"
+stu_003,startups,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,964,9,974,,"SELECT
+  COUNT(*) AS rounds
+FROM startups.funding_rounds
+WHERE
+  city = 'Bengaluru'
+LIMIT 1000"
+stu_004,startups,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,246,7,253,,"SELECT
+  MAX(amount_usd) AS largest_amount_usd
+FROM startups.funding_rounds
+WHERE
+  amount_usd IS NOT NULL
+LIMIT 1000"
+stu_005,startups,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,431,11,442,,"SELECT
+  COUNT(DISTINCT startup_name) AS distinct_startups
+FROM startups.funding_rounds
+LIMIT 1000"
+stu_006,startups,2,easy,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,273,9,282,,"SELECT
+  COUNT(*) AS rounds
+FROM startups.funding_rounds
+WHERE
+  EXTRACT(YEAR FROM funding_date) = 2017
+LIMIT 1000"
+stu_007,startups,2,medium,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,252,11,263,,"SELECT
+  city,
+  COUNT(*) AS rounds
+FROM startups.funding_rounds
+GROUP BY
+  city
+ORDER BY
+  rounds DESC
+LIMIT 5"
+stu_008,startups,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,339,12,350,,"SELECT
+  EXTRACT(YEAR FROM funding_date) AS year,
+  SUM(amount_usd) AS total_disclosed_usd
+FROM startups.funding_rounds
+WHERE
+  amount_usd IS NOT NULL
+GROUP BY
+  EXTRACT(YEAR FROM funding_date)
+ORDER BY
+  year
+LIMIT 100"
+stu_009,startups,2,medium,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,1321,12,1333,,"SELECT
+  industry_vertical,
+  COUNT(*) AS rounds
+FROM startups.funding_rounds
+GROUP BY
+  industry_vertical
+ORDER BY
+  rounds DESC
+LIMIT 5"
+stu_010,startups,2,medium,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,753,8,761,,"SELECT
+  ROUND(CAST(AVG(amount_usd) / 1e6 AS DECIMAL), 2) AS avg_usd_mn
+FROM startups.funding_rounds
+WHERE
+  investment_type = 'Series A' AND amount_usd IS NOT NULL
+LIMIT 1000"
+stu_011,startups,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,240,8,248,,"SELECT
+  COUNT(DISTINCT investor_name) AS distinct_investors
+FROM startups.round_investors
+LIMIT 1000"
+stu_012,startups,2,medium,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,302,82,385,,"SELECT
+  ri.investor_name,
+  COUNT(DISTINCT ri.round_id) AS rounds
+FROM startups.round_investors AS ri
+WHERE
+  ri.investor_name NOT ILIKE '%undisclosed%'
+GROUP BY
+  ri.investor_name
+ORDER BY
+  rounds DESC
+LIMIT 10"
+stu_013,startups,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,321,6,327,,"SELECT
+  EXTRACT(YEAR FROM funding_date) AS year,
+  COUNT(*) AS seed_angel_rounds
+FROM startups.funding_rounds
+WHERE
+  investment_type = 'Seed / Angel'
+GROUP BY
+  EXTRACT(YEAR FROM funding_date)
+ORDER BY
+  year
+LIMIT 100"
+stu_014,startups,2,medium,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,320,10,330,,"SELECT
+  investment_type,
+  ROUND(SUM(amount_usd) / 1e6, 2) AS total_usd_mn
+FROM startups.funding_rounds
+WHERE
+  amount_usd IS NOT NULL
+GROUP BY
+  investment_type
+ORDER BY
+  total_usd_mn DESC
+LIMIT 100"
+stu_015,startups,2,medium,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,287,10,297,,"SELECT
+  CAST(EXTRACT(MONTH FROM funding_date) AS INT) AS month,
+  COUNT(*) AS rounds
+FROM startups.funding_rounds
+WHERE
+  funding_date IS NOT NULL
+GROUP BY
+  1
+ORDER BY
+  rounds DESC,
+  month ASC
+LIMIT 1"
+stu_016,startups,2,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,2426,8,2434,,"SELECT
+  EXTRACT(YEAR FROM funding_date) AS year,
+  COUNT(*) AS rounds,
+  COUNT(*) - LAG(COUNT(*)) OVER (ORDER BY EXTRACT(YEAR FROM funding_date)) AS change_from_prev_year
+FROM startups.funding_rounds
+WHERE
+  funding_date IS NOT NULL
+GROUP BY
+  EXTRACT(YEAR FROM funding_date)
+ORDER BY
+  year
+LIMIT 100"
+stu_017,startups,2,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,1056,17,1073,,"WITH yearly_startup_funding AS (
+  SELECT
+    CAST(EXTRACT(YEAR FROM funding_date) AS INT) AS yr,
+    startup_name,
+    SUM(amount_usd) AS total_usd
+  FROM startups.funding_rounds
+  WHERE
+    amount_usd IS NOT NULL AND EXTRACT(YEAR FROM funding_date) BETWEEN 2015 AND 2017
+  GROUP BY
+    1,
+    2
+), ranked AS (
+  SELECT
+    yr,
+    startup_name,
+    ROUND(total_usd / 1e6, 2) AS total_usd_mn,
+    ROW_NUMBER() OVER (PARTITION BY yr ORDER BY total_usd DESC) AS rn
+  FROM yearly_startup_funding
+)
+SELECT
+  yr,
+  startup_name,
+  total_usd_mn
+FROM ranked
+WHERE
+  rn <= 3
+ORDER BY
+  yr,
+  rn
+LIMIT 100"
+stu_018,startups,2,hard,groq:qwen/qwen3.8-27b,full,True,True,False,False,1,477,13,489,,"SELECT
+  s1.startup_name
+FROM startups.funding_rounds AS s1
+JOIN startups.funding_rounds AS s2
+  ON s1.startup_name = s2.startup_name
+WHERE
+  EXTRACT(YEAR FROM s1.funding_date) = 2015
+  AND EXTRACT(YEAR FROM s2.funding_date) = 2019
+GROUP BY
+  s1.startup_name
+ORDER BY
+  s1.startup_name
+LIMIT 100"
+stu_019,startups,2,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,449,7,456,,"SELECT
+  city,
+  COUNT(*) AS total_rounds,
+  SUM(CASE WHEN investment_type = 'Seed / Angel' THEN 1 ELSE 0 END) AS seed_angel_rounds,
+  ROUND(
+    CAST(100.0 * SUM(CASE WHEN investment_type = 'Seed / Angel' THEN 1 ELSE 0 END) / COUNT(*) AS DECIMAL),
+    2
+  ) AS seed_angel_pct
+FROM startups.funding_rounds
+GROUP BY
+  city
+HAVING
+  COUNT(*) >= 50
+ORDER BY
+  seed_angel_pct DESC
+LIMIT 100"
+stu_020,startups,2,hard,groq:qwen/qwen3.8-27b,full,False,True,False,False,1,516,18,533,,"SELECT
+  ri.investor_name,
+  COUNT(DISTINCT fr.startup_name) AS distinct_startups
+FROM startups.round_investors AS ri
+JOIN startups.funding_rounds AS fr
+  ON fr.round_id = ri.round_id
+WHERE
+  fr.industry_vertical = 'Consumer Internet'
+  AND ri.investor_name <> 'Undisclosed Investors'
+GROUP BY
+  ri.investor_name
+HAVING
+  COUNT(DISTINCT fr.startup_name) >= 4
+ORDER BY
+  distinct_startups DESC,
+  ri.investor_name
+LIMIT 100"
